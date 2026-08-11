@@ -1,0 +1,276 @@
+// Prisma schema - Cooperativa Riojana
+// Ejecutar: npx prisma migrate dev --name init
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "mysql"
+  url      = env("DATABASE_URL")
+}
+
+enum RolUsuario {
+  SOCIO
+  SUPER_ADMIN
+  EDITOR_CONTENIDOS
+}
+
+enum EstadoSocio {
+  ACTIVO
+  PENDIENTE
+  INACTIVO
+}
+
+enum TipoMiembro {
+  PRODUCTOR
+  ADHERENTE
+  HONORARIO
+}
+
+enum EstadoCuota {
+  PENDIENTE
+  PAGADO
+  VENCIDO
+}
+
+enum EstadoValidacionPago {
+  PENDIENTE_REVISION
+  APROBADO
+  RECHAZADO
+}
+
+enum MetodoPago {
+  TRANSFERENCIA
+  EFECTIVO
+  MERCADOPAGO
+}
+
+enum ModalidadTaller {
+  PRESENCIAL
+  VIRTUAL
+}
+
+enum EstadoInscripcion {
+  PENDIENTE
+  CONFIRMADO
+  CANCELADO
+}
+
+enum EstadoContenido {
+  BORRADOR
+  PUBLICADO
+  PROGRAMADO
+}
+
+enum RedSocial {
+  TIKTOK
+  YOUTUBE
+  INSTAGRAM
+  LINKEDIN
+}
+
+enum EstadoPublicacionRed {
+  PENDIENTE
+  PUBLICADO
+  ERROR
+}
+
+model Usuario {
+  id            String     @id @default(cuid())
+  email         String     @unique
+  passwordHash  String
+  rol           RolUsuario @default(SOCIO)
+  activo        Boolean    @default(true)
+  createdAt     DateTime   @default(now())
+  updatedAt     DateTime   @updatedAt
+
+  socio         Socio?
+  noticias      Noticia[]  @relation("AutorNoticia")
+  pagosValidados Pago[]    @relation("ValidadorPago")
+
+  @@map("usuarios")
+}
+
+model Socio {
+  id              String      @id @default(cuid())
+  usuarioId       String      @unique
+  usuario         Usuario     @relation(fields: [usuarioId], references: [id])
+
+  nombre          String
+  apellido        String
+  dni             String      @unique
+  fechaNacimiento DateTime?
+  telefono        String?
+  email           String
+  direccion       String?
+  region          String?
+  idCooperativa   String      @unique // ej: CR-2024-0081
+  tipoMiembro     TipoMiembro @default(PRODUCTOR)
+  estado          EstadoSocio @default(PENDIENTE)
+  fotoUrl         String?
+
+  createdAt       DateTime    @default(now())
+  updatedAt       DateTime    @updatedAt
+
+  grupoFamiliar     GrupoFamiliar[]
+  cuotas            Cuota[]
+  pagos             Pago[]
+  inscripciones     InscripcionTaller[]
+
+  @@map("socios")
+  @@index([region])
+  @@index([estado])
+}
+
+model GrupoFamiliar {
+  id              String    @id @default(cuid())
+  socioId         String
+  socio           Socio     @relation(fields: [socioId], references: [id], onDelete: Cascade)
+
+  nombre          String
+  apellido        String
+  dni             String?
+  parentesco      String    // ej: "Cónyuge", "Hijo/a"
+  fechaNacimiento DateTime?
+  email           String?
+  telefono        String?
+
+  createdAt       DateTime  @default(now())
+
+  @@map("grupo_familiar")
+  @@index([socioId])
+}
+
+// Configuración general de la cooperativa (fila única, id fijo "singleton")
+model ConfiguracionCooperativa {
+  id                String   @id @default("singleton")
+  montoCuotaActual  Decimal  @default(12450) @db.Decimal(10, 2)
+  cbu               String?
+  alias             String?
+  updatedAt         DateTime @updatedAt
+
+  @@map("configuracion_cooperativa")
+}
+
+model Cuota {
+  id                String      @id @default(cuid())
+  socioId           String
+  socio             Socio       @relation(fields: [socioId], references: [id])
+
+  periodo           String      // ej: "Marzo 2024"
+  concepto          String      @default("Cuota Social")
+  monto             Decimal     @db.Decimal(10, 2)
+  fechaVencimiento  DateTime
+  estado            EstadoCuota @default(PENDIENTE)
+
+  pago              Pago?
+
+  createdAt         DateTime    @default(now())
+
+  @@map("cuotas")
+  @@index([socioId, estado])
+}
+
+model Pago {
+  id                  String                @id @default(cuid())
+  cuotaId             String                @unique
+  cuota               Cuota                 @relation(fields: [cuotaId], references: [id])
+  socioId             String
+  socio               Socio                 @relation(fields: [socioId], references: [id])
+
+  monto               Decimal               @db.Decimal(10, 2)
+  metodo              MetodoPago
+  comprobanteUrl      String?
+  estadoValidacion    EstadoValidacionPago  @default(PENDIENTE_REVISION)
+  fechaPago           DateTime              @default(now())
+
+  validadoPorId       String?
+  validadoPor         Usuario?              @relation("ValidadorPago", fields: [validadoPorId], references: [id])
+  fechaValidacion     DateTime?
+  notaRechazo         String?
+
+  @@map("pagos")
+  @@index([socioId])
+  @@index([estadoValidacion])
+}
+
+model Taller {
+  id                String           @id @default(cuid())
+  titulo            String
+  slug              String           @unique
+  descripcion       String           @db.Text
+  categoria         String           // Salud, Educación, Cultura, Social...
+  instructor        String?
+  ubicacion         String?
+  modalidad         ModalidadTaller  @default(PRESENCIAL)
+  fecha             DateTime
+  horaInicio        String
+  horaFin           String?
+  cuposTotales       Int
+  imagenUrl         String?
+  requisitos        String?          @db.Text
+  queAprenderas     String?          @db.Text
+  materialUrl       String?
+  estado            String           @default("ACTIVO") // ACTIVO, FINALIZADO, CANCELADO
+
+  createdAt         DateTime         @default(now())
+  updatedAt         DateTime         @updatedAt
+
+  inscripciones     InscripcionTaller[]
+
+  @@map("talleres")
+  @@index([fecha])
+}
+
+model InscripcionTaller {
+  id              String            @id @default(cuid())
+  tallerId        String
+  taller          Taller            @relation(fields: [tallerId], references: [id])
+  socioId         String
+  socio           Socio             @relation(fields: [socioId], references: [id])
+
+  estado          EstadoInscripcion @default(PENDIENTE)
+  observaciones   String?
+  fechaInscripcion DateTime         @default(now())
+
+  @@map("inscripciones_talleres")
+  @@unique([tallerId, socioId])
+}
+
+model Noticia {
+  id                String           @id @default(cuid())
+  titulo            String
+  slug              String           @unique
+  contenido         String           @db.Text
+  categoria         String           // Institucional, Comunidad, Comercio, Técnico...
+  imagenUrl         String?
+  estado            EstadoContenido  @default(BORRADOR)
+
+  autorId           String
+  autor             Usuario          @relation("AutorNoticia", fields: [autorId], references: [id])
+
+  fechaPublicacion  DateTime?
+  createdAt         DateTime         @default(now())
+  updatedAt         DateTime         @updatedAt
+
+  redesSociales     NoticiaRedSocial[]
+
+  @@map("noticias")
+  @@index([estado])
+}
+
+// Selección de redes sociales a las que se publica cada noticia
+// (TikTok, YouTube, Instagram, LinkedIn)
+model NoticiaRedSocial {
+  id                    String                @id @default(cuid())
+  noticiaId             String
+  noticia               Noticia               @relation(fields: [noticiaId], references: [id], onDelete: Cascade)
+  redSocial             RedSocial
+  estadoPublicacion     EstadoPublicacionRed  @default(PENDIENTE)
+  urlPublicacion        String?
+  fechaPublicacion      DateTime?
+
+  @@map("noticia_redes_sociales")
+  @@unique([noticiaId, redSocial])
+}

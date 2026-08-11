@@ -1,0 +1,47 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --font-sans: "Inter", system-ui, sans-serif;
+}
+
+body {
+  @apply bg-surface text-primary-dark antialiased;
+}
+
+/* Utilidades compartidas para tarjetas y badges de estado, reutilizadas
+   en portal del socio y panel admin (ver prototipos Figma) */
+@layer components {
+  .card {
+    @apply rounded-card border border-surface-border bg-white p-6 shadow-sm;
+  }
+
+  .badge {
+    @apply inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-xs font-medium;
+  }
+
+  .badge-success {
+    @apply badge bg-status-success/10 text-status-success;
+  }
+
+  .badge-warning {
+    @apply badge bg-status-warning/10 text-status-warning;
+  }
+
+  .badge-danger {
+    @apply badge bg-status-danger/10 text-status-danger;
+  }
+
+  .btn-primary {
+    @apply rounded-lg bg-primary px-4 py-2.5 text-sm font-medium text-white transition-colors hover:bg-primary-light;
+  }
+
+  .btn-secondary {
+    @apply rounded-lg border border-surface-border bg-white px-4 py-2.5 text-sm font-medium text-primary-dark transition-colors hover:bg-surface-muted;
+  }
+
+  .input {
+    @apply w-full rounded-lg border border-surface-border bg-white px-3.5 py-2.5 text-sm placeholder:text-gray-400 focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary;
+  }
+}
