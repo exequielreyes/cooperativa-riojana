@@ -3,6 +3,7 @@ import { prisma } from "@/lib/db";
 import { StatusBadge } from "@/components/ui/StatusBadge";
 import { AccionesSocio } from "@/components/admin/AccionesSocio";
 import { Mail, Search } from "lucide-react";
+import { FiltrosSocios } from "@/components/admin/FiltrosSocios";
 
 const estadoLabel: Record<string, string> = {
   ACTIVO: "Activo",
@@ -74,32 +75,7 @@ export default async function AdminSociosPage({
         </Link>
       </div>
 
-      <form className="mb-4 flex flex-wrap gap-3" method="GET">
-        <div className="relative flex-1 min-w-[220px]">
-          <Search size={16} className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
-          <input
-            className="input pl-9"
-            name="q"
-            defaultValue={q}
-            placeholder="Buscar por nombre, ID o email..."
-          />
-        </div>
-        <select className="input w-auto" name="region" defaultValue={region}>
-          <option value="">Todas las Regiones</option>
-          {regiones
-            .filter((r) => r.region)
-            .map((r) => (
-              <option key={r.region} value={r.region!}>{r.region}</option>
-            ))}
-        </select>
-        <select className="input w-auto" name="estado" defaultValue={estado}>
-          <option value="">Todos los Estados</option>
-          <option value="ACTIVO">Activo</option>
-          <option value="PENDIENTE">Pendiente</option>
-          <option value="INACTIVO">Inactivo</option>
-        </select>
-        <button type="submit" className="btn-secondary">Filtrar</button>
-      </form>
+      <FiltrosSocios regiones={regiones.filter((r) => r.region).map((r) => r.region!)} />
 
       <div className="card overflow-x-auto p-0">
         <table className="w-full text-sm">
@@ -134,7 +110,7 @@ export default async function AdminSociosPage({
                   <StatusBadge label={estadoLabel[socio.estado]} tone={estadoTone[socio.estado]} />
                 </td>
                 <td className="px-6 py-3">
-                  <AccionesSocio socioId={socio.id} estado={socio.estado} email={socio.email} />
+                  <AccionesSocio socioId={socio.id} estado={socio.estado} email={socio.email} nombre={`${socio.nombre} ${socio.apellido}`} />
                 </td>
               </tr>
             ))}
