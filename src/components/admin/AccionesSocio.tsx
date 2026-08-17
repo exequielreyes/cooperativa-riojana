@@ -5,7 +5,7 @@ import { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { MoreVertical } from "lucide-react";
 
-export function AccionesSocio({ socioId, estado, email }: { socioId: string; estado: string; email: string }) {
+export function AccionesSocio({ socioId, estado, email, nombre }: { socioId: string; estado: string; email: string; nombre: string }) {
   const router = useRouter();
   const [abierto, setAbierto] = useState(false);
   const [cargando, setCargando] = useState(false);

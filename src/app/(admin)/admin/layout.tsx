@@ -11,9 +11,15 @@ export default async function AdminLayout({ children }: { children: React.ReactN
   const usuario = await prisma.usuario.findUnique({ where: { id: session.user.id } });
   if (!usuario?.activo) redirect("/login");
 
+ const [socios, pagos, talleres] = await Promise.all([
+    prisma.socio.count({ where: { estado: "PENDIENTE" } }),
+    prisma.pago.count({ where: { estadoValidacion: "PENDIENTE_REVISION" } }),
+    prisma.inscripcionTaller.count({ where: { estado: "PENDIENTE" } }),
+  ]);
+
   return (
     <div className="flex min-h-screen bg-surface-muted">
-      <AdminSidebar />
+      <AdminSidebar contadores={{ socios, pagos, talleres }}/>
       <main className="flex-1 overflow-x-auto px-8 py-8">{children}</main>
     </div>
   );

@@ -5,17 +5,26 @@ import { usePathname } from "next/navigation";
 import { signOut } from "next-auth/react";
 import { LayoutDashboard, Users, CreditCard, Newspaper, GraduationCap, Settings, LogOut } from "lucide-react";
 
-const links = [
-  { href: "/admin", label: "Métricas", icon: LayoutDashboard },
-  { href: "/admin/socios", label: "Socios", icon: Users },
-  { href: "/admin/pagos", label: "Pagos", icon: CreditCard },
-  { href: "/admin/talleres", label: "Talleres", icon: GraduationCap },
-  { href: "/admin/contenidos", label: "Contenidos", icon: Newspaper },
-  { href: "/admin/configuracion", label: "Configuración", icon: Settings },
-];
 
-export function AdminSidebar() {
+interface Contadores {
+  socios: number;
+  pagos: number;
+  talleres: number;
+}
+
+
+
+export function AdminSidebar({contadores}: {contadores: Contadores}) {
   const pathname = usePathname();
+
+const links = [
+  { href: "/admin", label: "Métricas", icon: LayoutDashboard, badge: 0 },
+  { href: "/admin/socios", label: "Socios", icon: Users, badge: contadores.socios },
+  { href: "/admin/pagos", label: "Pagos", icon: CreditCard, badge: contadores.pagos },
+  { href: "/admin/talleres", label: "Talleres", icon: GraduationCap, badge: contadores.talleres },
+  { href: "/admin/contenidos", label: "Contenidos", icon: Newspaper, badge: 0 },
+  { href: "/admin/configuracion", label: "Configuración", icon: Settings, badge: 0 },
+];
 
   return (
     <aside className="flex  w-60 flex-col justify-between border-r border-surface-border bg-white px-4 py-6">
@@ -38,8 +47,15 @@ export function AdminSidebar() {
                   activo ? "bg-primary/10 text-primary" : "text-gray-600 hover:bg-surface-muted hover:text-primary"
                 }`}
               >
+                <span className="flex items-center gap-2.5">
                 <link.icon size={16} />
                 {link.label}
+                </span>
+                {link.badge > 0 && (
+                  <span className="flex h-5 min-w-[20px] items-center justify-center rounded-full bg-status-danger px-1 text-[11px] font-medium text-white">
+                    {link.badge}
+                  </span>
+                )}
               </Link>
             );
           })}
