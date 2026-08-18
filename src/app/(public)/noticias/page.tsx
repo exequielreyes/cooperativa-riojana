@@ -2,7 +2,9 @@ import Image from "next/image";
 import Link from "next/link";
 import { prisma } from "@/lib/db";
 import { formatDate } from "@/lib/utils";
+import { Pagination } from "@/components/noticias/Pagination";
 
+const PAGE_SIZE = 9;
 
 // Función auxiliar para calcular tiempo de lectura aproximado
 function getReadingTime(text: string): string {
@@ -12,21 +14,36 @@ function getReadingTime(text: string): string {
   return `${minutes || 1} min`;
 }
 
+type NoticiasPageProps = {
+  searchParams: { page?: string };
+};
 
+export default async function NoticiasPage({ searchParams }: NoticiasPageProps) {
+  const where = { estado: "PUBLICADO" as const };
+  const orderBy = { fechaPublicacion: "desc" as const };
 
+  const totalNoticias = await prisma.noticia.count({ where });
 
-export default async function NoticiasPage() {
-  const noticias = await prisma.noticia.findMany({
-    where: { estado: "PUBLICADO" },
-    orderBy: { fechaPublicacion: "desc" },
+  // La noticia destacada ocupa un slot aparte y solo se muestra en la página 1;
+  // el resto de la grilla se pagina de a PAGE_SIZE noticias.
+  const totalPaginas = Math.max(
+    1,
+    Math.ceil(Math.max(0, totalNoticias - 1) / PAGE_SIZE)
+  );
+  const paginaSolicitada = Number(searchParams?.page) || 1;
+  const paginaActual = Math.min(Math.max(1, paginaSolicitada), totalPaginas);
+
+  const noticiaDestacada =
+    paginaActual === 1
+      ? await prisma.noticia.findFirst({ where, orderBy })
+      : null;
+
+  const restoNoticias = await prisma.noticia.findMany({
+    where,
+    orderBy,
+    skip: 1 + (paginaActual - 1) * PAGE_SIZE,
+    take: PAGE_SIZE,
   });
-
-
- const noticiaDestacada = noticias[0];
-  const restoNoticias = noticias.slice(1);
-
-
-
   return (
     <div className="bg-surface-muted/30 min-h-screen py-12">
       <div className="mx-auto max-w-6xl px-6">
@@ -44,7 +61,7 @@ export default async function NoticiasPage() {
           </p>
         </div>
 
-        {noticias.length === 0 ? (
+        {totalNoticias === 0 ? (
           <div className="rounded-xl border border-dashed border-gray-300 p-12 text-center text-sm text-gray-500">
             Todavía no hay noticias publicadas.
           </div>
@@ -122,7 +139,8 @@ export default async function NoticiasPage() {
                 </button>
               </div>
               <span className="rounded-md bg-gray-100 px-3 py-1 text-xs text-gray-500">
-                Mostrando {noticias.length} noticias
+                {totalNoticias} noticia{totalNoticias === 1 ? "" : "s"} en total
+                {totalPaginas > 1 ? ` · Página ${paginaActual} de ${totalPaginas}` : ""}
               </span>
             </div>
 
@@ -181,6 +199,12 @@ export default async function NoticiasPage() {
                 </Link>
               ))}
             </div>
+
+            <Pagination
+              paginaActual={paginaActual}
+              totalPaginas={totalPaginas}
+              basePath="/noticias"
+            />
           </>
         )}
       </div>
