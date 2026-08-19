@@ -8,15 +8,15 @@ export default async function ReportarPagoPage() {
   const session = await getServerSession(authOptions);
   const socioId = session!.user.socioId!;
 
-  const [cuota, configuracion] = await Promise.all([
-    prisma.cuota.findFirst({
+  const [cuotas, configuracion] = await Promise.all([
+    prisma.cuota.findMany({
       where: { socioId, estado: { in: ["PENDIENTE", "VENCIDO"] } },
       orderBy: { fechaVencimiento: "asc" },
     }),
     prisma.configuracionCooperativa.findUnique({ where: { id: "singleton" } }),
   ]);
 
-  if (!cuota) {
+  if (cuotas.length === 0) {
     return (
       <div className="mx-auto max-w-2xl px-6 py-10">
         <VolverAlPanel />
@@ -28,12 +28,12 @@ export default async function ReportarPagoPage() {
 
   return (
     <ReportarPagoForm
-      cuota={{
+      cuotas={cuotas.map((cuota) => ({
         id: cuota.id,
         periodo: cuota.periodo,
         monto: Number(cuota.monto),
         fechaVencimiento: cuota.fechaVencimiento.toISOString(),
-      }}
+      }))}
       datosTransferencia={{
         cbu: configuracion?.cbu ?? null,
         alias: configuracion?.alias ?? null,

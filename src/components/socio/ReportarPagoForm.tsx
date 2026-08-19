@@ -17,13 +17,24 @@ interface DatosTransferencia {
   alias: string | null;
 }
 
-export function ReportarPagoForm({ cuota, datosTransferencia }: { cuota: Cuota; datosTransferencia: DatosTransferencia }) {
+export function ReportarPagoForm({
+  cuotas,
+  datosTransferencia,
+}: {
+  cuotas: Cuota[];
+  datosTransferencia: DatosTransferencia;
+}) {
   const router = useRouter();
   const [archivo, setArchivo] = useState<File | null>(null);
   const [metodo, setMetodo] = useState("TRANSFERENCIA");
   const [enviando, setEnviando] = useState(false);
   const [enviado, setEnviado] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  // Por defecto se preselecciona la cuota más antigua (primera del array,
+  // ya vienen ordenadas por fechaVencimiento asc desde el server).
+  const [cuotaId, setCuotaId] = useState(cuotas[0].id);
+
+  const cuota = cuotas.find((c) => c.id === cuotaId) ?? cuotas[0];
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -76,6 +87,26 @@ export function ReportarPagoForm({ cuota, datosTransferencia }: { cuota: Cuota; 
       <VolverAlPanel />
       <h1 className="mb-1 text-2xl font-semibold text-primary-dark">Reportar Pago de Cuota</h1>
       <p className="mb-6 text-sm text-gray-500">Carga tu comprobante de transferencia para validar el pago.</p>
+
+      {cuotas.length > 1 && (
+        <div className="card mb-4">
+          <label className="mb-1 block text-xs text-gray-400">
+            Tenés {cuotas.length} cuotas pendientes. ¿Cuál querés pagar?
+          </label>
+          <select
+            className="input"
+            value={cuotaId}
+            onChange={(e) => setCuotaId(e.target.value)}
+            disabled={enviando}
+          >
+            {cuotas.map((c) => (
+              <option key={c.id} value={c.id}>
+                {c.periodo} — {formatCurrency(c.monto)} (vence {formatDate(c.fechaVencimiento)})
+              </option>
+            ))}
+          </select>
+        </div>
+      )}
 
       <div className="card mb-6 flex items-center justify-between">
         <div>
