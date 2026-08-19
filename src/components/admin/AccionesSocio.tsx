@@ -4,11 +4,58 @@ import Link from "next/link";
 import { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { MoreVertical } from "lucide-react";
+import { ConfirmModal } from "@/components/ui/ConfirmModal";
 
-export function AccionesSocio({ socioId, estado, email, nombre }: { socioId: string; estado: string; email: string; nombre: string }) {
+type AccionConfirmable = "APROBAR" | "BAJA" | "REACTIVAR";
+
+const CONFIRM_CONFIG: Record<
+  AccionConfirmable,
+  {
+    nuevoEstado: "ACTIVO" | "INACTIVO";
+    title: string;
+    description: string;
+    confirmLabel: string;
+    tone?: "default" | "danger";
+  }
+> = {
+  APROBAR: {
+    nuevoEstado: "ACTIVO",
+    title: "¿Aprobar esta solicitud?",
+    description:
+      "El socio pasará a estado Activo y se generará una contraseña temporal para que pueda ingresar al portal.",
+    confirmLabel: "Sí, aprobar",
+  },
+  BAJA: {
+    nuevoEstado: "INACTIVO",
+    title: "¿Dar de baja a este socio?",
+    description:
+      "El socio quedará Inactivo y perderá acceso inmediato al portal, incluso si tiene una sesión ya abierta.",
+    confirmLabel: "Sí, dar de baja",
+    tone: "danger",
+  },
+  REACTIVAR: {
+    nuevoEstado: "ACTIVO",
+    title: "¿Reactivar a este socio?",
+    description: "El socio recuperará el acceso al portal con su contraseña actual.",
+    confirmLabel: "Sí, reactivar",
+  },
+};
+
+export function AccionesSocio({
+  socioId,
+  estado,
+  email,
+  nombre,
+}: {
+  socioId: string;
+  estado: string;
+  email: string;
+  nombre: string;
+}) {
   const router = useRouter();
   const [abierto, setAbierto] = useState(false);
   const [cargando, setCargando] = useState(false);
+  const [confirmando, setConfirmando] = useState<AccionConfirmable | null>(null);
   const [credenciales, setCredenciales] = useState<{ email: string; passwordTemporal: string } | null>(null);
   const ref = useRef<HTMLDivElement>(null);
 
@@ -28,7 +75,7 @@ export function AccionesSocio({ socioId, estado, email, nombre }: { socioId: str
       body: JSON.stringify({ estado: nuevoEstado }),
     });
     setCargando(false);
-    setAbierto(false);
+    setConfirmando(null);
 
     if (res.ok) {
       const data = await res.json();
@@ -37,6 +84,11 @@ export function AccionesSocio({ socioId, estado, email, nombre }: { socioId: str
       }
     }
     router.refresh();
+  }
+
+  function pedirConfirmacion(accion: AccionConfirmable) {
+    setAbierto(false);
+    setConfirmando(accion);
   }
 
   return (
@@ -66,7 +118,7 @@ export function AccionesSocio({ socioId, estado, email, nombre }: { socioId: str
           {estado === "PENDIENTE" && (
             <button
               className="block w-full px-4 py-2 text-left text-sm text-status-success hover:bg-surface-muted"
-              onClick={() => cambiarEstado("ACTIVO")}
+              onClick={() => pedirConfirmacion("APROBAR")}
             >
               Aprobar Solicitud
             </button>
@@ -74,7 +126,7 @@ export function AccionesSocio({ socioId, estado, email, nombre }: { socioId: str
           {estado === "ACTIVO" && (
             <button
               className="block w-full px-4 py-2 text-left text-sm text-status-danger hover:bg-surface-muted"
-              onClick={() => cambiarEstado("INACTIVO")}
+              onClick={() => pedirConfirmacion("BAJA")}
             >
               Dar de Baja
             </button>
@@ -82,12 +134,25 @@ export function AccionesSocio({ socioId, estado, email, nombre }: { socioId: str
           {estado === "INACTIVO" && (
             <button
               className="block w-full px-4 py-2 text-left text-sm text-status-success hover:bg-surface-muted"
-              onClick={() => cambiarEstado("ACTIVO")}
+              onClick={() => pedirConfirmacion("REACTIVAR")}
             >
               Reactivar
             </button>
           )}
         </div>
+      )}
+
+      {confirmando && (
+        <ConfirmModal
+          open
+          title={CONFIRM_CONFIG[confirmando].title}
+          description={CONFIRM_CONFIG[confirmando].description}
+          confirmLabel={CONFIRM_CONFIG[confirmando].confirmLabel}
+          tone={CONFIRM_CONFIG[confirmando].tone}
+          loading={cargando}
+          onConfirm={() => cambiarEstado(CONFIRM_CONFIG[confirmando].nuevoEstado)}
+          onCancel={() => setConfirmando(null)}
+        />
       )}
 
       {credenciales && (
@@ -100,8 +165,12 @@ export function AccionesSocio({ socioId, estado, email, nombre }: { socioId: str
             <p className="mb-4 text-sm text-gray-600">
               Compartile estas credenciales temporales al socio (o implementá el envío por email):
             </p>
-            <p className="text-sm"><strong>Usuario:</strong> {credenciales.email}</p>
-            <p className="mb-4 text-sm"><strong>Contraseña temporal:</strong> {credenciales.passwordTemporal}</p>
+            <p className="text-sm">
+              <strong>Usuario:</strong> {credenciales.email}
+            </p>
+            <p className="mb-4 text-sm">
+              <strong>Contraseña temporal:</strong> {credenciales.passwordTemporal}
+            </p>
             <button className="btn-primary w-full" onClick={() => setCredenciales(null)}>
               Entendido
             </button>
