@@ -2,6 +2,7 @@ import { prisma } from "@/lib/db";
 import { StatusBadge } from "@/components/ui/StatusBadge";
 import { AccionesPago } from "@/components/admin/AccionesPago";
 import { ConfiguracionCuotaCard } from "@/components/admin/ConfiguracionCuotaCard";
+import { FiltrosPagos } from "@/components/admin/FiltrosPagos";
 import { formatCurrency, formatDate } from "@/lib/utils";
 
 const estadoLabel: Record<string, string> = {
@@ -16,9 +17,33 @@ const estadoTone: Record<string, "success" | "warning" | "danger"> = {
   RECHAZADO: "danger",
 };
 
-export default async function AdminPagosPage() {
-  const [pagos, recaudadoAgg, deudaAgg, configuracion] = await Promise.all([
+export default async function AdminPagosPage({
+  searchParams,
+}: {
+  searchParams: { q?: string; estado?: string; metodo?: string };
+}) {
+  const q = searchParams.q ?? "";
+  const estado = searchParams.estado ?? "";
+  const metodo = searchParams.metodo ?? "";
+
+  const where = {
+    ...(estado && { estadoValidacion: estado as "PENDIENTE_REVISION" | "APROBADO" | "RECHAZADO" }),
+    ...(metodo && { metodo: metodo as "TRANSFERENCIA" | "EFECTIVO" | "MERCADOPAGO" }),
+    ...(q && {
+      socio: {
+        OR: [
+          { nombre: { contains: q } },
+          { apellido: { contains: q } },
+          { idCooperativa: { contains: q } },
+          { email: { contains: q } },
+        ],
+      },
+    }),
+  };
+
+  const [pagos, recaudadoAgg, deudaAgg, pendientesCount, configuracion] = await Promise.all([
     prisma.pago.findMany({
+      where,
       include: { socio: true },
       orderBy: { fechaPago: "desc" },
       take: 50,
@@ -30,6 +55,11 @@ export default async function AdminPagosPage() {
     prisma.cuota.aggregate({
       _sum: { monto: true },
       where: { estado: { in: ["PENDIENTE", "VENCIDO"] } },
+    }),
+    // Conteo aparte, independiente del filtro y del take:50 de la tabla,
+    // para que la card de arriba siempre muestre el total real de pendientes.
+    prisma.pago.count({
+      where: { estadoValidacion: "PENDIENTE_REVISION" },
     }),
     prisma.configuracionCooperativa.upsert({
       where: { id: "singleton" },
@@ -60,15 +90,15 @@ export default async function AdminPagosPage() {
         </div>
         <div className="card">
           <p className="text-xs text-gray-400">Pagos por revisar</p>
-          <p className="mt-1 text-xl font-semibold text-primary-dark">
-            {pagos.filter((p) => p.estadoValidacion === "PENDIENTE_REVISION").length}
-          </p>
+          <p className="mt-1 text-xl font-semibold text-primary-dark">{pendientesCount}</p>
         </div>
       </div>
 
       <div className="mb-6">
         <ConfiguracionCuotaCard montoActual={Number(configuracion.montoCuotaActual)} />
       </div>
+
+      <FiltrosPagos />
 
       <div className="card overflow-x-auto p-0">
         <table className="w-full text-sm">
@@ -87,7 +117,7 @@ export default async function AdminPagosPage() {
             {pagos.length === 0 && (
               <tr>
                 <td colSpan={7} className="px-6 py-8 text-center text-sm text-gray-400">
-                  Todavía no hay pagos reportados.
+                  No se encontraron pagos con esos filtros.
                 </td>
               </tr>
             )}
