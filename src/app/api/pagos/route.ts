@@ -20,11 +20,12 @@ export async function POST(request: NextRequest) {
   }
 
   const formData = await request.formData();
-  const cuotaId = formData.get("cuotaId");
+  // Puede venir una o varias cuotas (checkboxes en el form de "Reportar Pago").
+  const cuotaIds = formData.getAll("cuotaId").filter((v): v is string => typeof v === "string" && v.length > 0);
   const metodo = formData.get("metodo");
   const comprobante = formData.get("comprobante");
 
-  if (typeof cuotaId !== "string" || typeof metodo !== "string") {
+  if (cuotaIds.length === 0 || typeof metodo !== "string") {
     return NextResponse.json({ error: "Datos incompletos" }, { status: 400 });
   }
   if (!(comprobante instanceof File) || comprobante.size === 0) {
@@ -37,23 +38,40 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: "Formato no admitido (usá JPG, PNG o PDF)" }, { status: 400 });
   }
 
-  const cuota = await prisma.cuota.findUnique({ where: { id: cuotaId } });
-  if (!cuota || cuota.socioId !== session.user.socioId) {
-    return NextResponse.json({ error: "Cuota inválida" }, { status: 404 });
+  const cuotas = await prisma.cuota.findMany({
+    where: { id: { in: cuotaIds }, socioId: session.user.socioId },
+    include: { pago: true },
+  });
+
+  // Todas las cuotas pedidas tienen que existir, ser del socio logueado,
+  // y no tener ya un pago registrado (Pago.cuotaId es único).
+  if (cuotas.length !== cuotaIds.length) {
+    return NextResponse.json({ error: "Alguna cuota seleccionada no es válida" }, { status: 404 });
+  }
+  if (cuotas.some((c) => c.pago)) {
+    return NextResponse.json(
+      { error: "Una de las cuotas seleccionadas ya tiene un pago registrado. Actualizá la página e intentá de nuevo." },
+      { status: 409 }
+    );
   }
 
   const comprobanteUrl = await guardarArchivo(comprobante, "comprobantes");
 
-  const pago = await prisma.pago.create({
-    data: {
-      cuotaId: cuota.id,
-      socioId: session.user.socioId,
-      monto: cuota.monto,
-      metodo: metodo as "TRANSFERENCIA" | "EFECTIVO" | "MERCADOPAGO",
-      comprobanteUrl,
-      estadoValidacion: "PENDIENTE_REVISION",
-    },
-  });
+  // Un Pago por cuota (mismo comprobante y método para todas), en una sola transacción.
+  const pagos = await prisma.$transaction(
+    cuotas.map((cuota) =>
+      prisma.pago.create({
+        data: {
+          cuotaId: cuota.id,
+          socioId: session.user.socioId!,
+          monto: cuota.monto,
+          metodo: metodo as "TRANSFERENCIA" | "EFECTIVO" | "MERCADOPAGO",
+          comprobanteUrl,
+          estadoValidacion: "PENDIENTE_REVISION",
+        },
+      })
+    )
+  );
 
-  return NextResponse.json(pago, { status: 201 });
+  return NextResponse.json(pagos, { status: 201 });
 }
