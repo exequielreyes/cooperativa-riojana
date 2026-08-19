@@ -3,6 +3,7 @@ import { StatusBadge } from "@/components/ui/StatusBadge";
 import { AccionesPago } from "@/components/admin/AccionesPago";
 import { ConfiguracionCuotaCard } from "@/components/admin/ConfiguracionCuotaCard";
 import { FiltrosPagos } from "@/components/admin/FiltrosPagos";
+import { RegistrarPagoEfectivo } from "@/components/admin/RegistrarPagoEfectivo";
 import { formatCurrency, formatDate } from "@/lib/utils";
 
 const estadoLabel: Record<string, string> = {
@@ -56,8 +57,6 @@ export default async function AdminPagosPage({
       _sum: { monto: true },
       where: { estado: { in: ["PENDIENTE", "VENCIDO"] } },
     }),
-    // Conteo aparte, independiente del filtro y del take:50 de la tabla,
-    // para que la card de arriba siempre muestre el total real de pendientes.
     prisma.pago.count({
       where: { estadoValidacion: "PENDIENTE_REVISION" },
     }),
@@ -72,7 +71,10 @@ export default async function AdminPagosPage({
     <div>
       <div className="mb-6 flex items-center justify-between">
         <h1 className="text-2xl font-semibold text-primary-dark">Gestión de Pagos</h1>
-        <button className="btn-primary">Exportar Reporte</button>
+        <div className="flex gap-2">
+          <RegistrarPagoEfectivo />
+          <button className="btn-primary">Exportar Reporte</button>
+        </div>
       </div>
 
       <div className="mb-6 grid gap-4 sm:grid-cols-3">
