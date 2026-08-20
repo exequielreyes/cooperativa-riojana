@@ -25,7 +25,7 @@
     "react-chatbotify": "^2.5.0",
     "react-dom": "^18.3.1",
     "recharts": "^2.12.7",
-    "zod": "^3.23.8"
+    "zod": "^3.25.76"
   },
   "devDependencies": {
     "@types/bcryptjs": "^2.4.6",
