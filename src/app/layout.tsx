@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import "./globals.css";
 import { Providers } from "@/components/Providers";
+// import { ChatBot } from "@/components/ChatBot";
 
 export const metadata: Metadata = {
   title: "Cooperativa Riojana",
@@ -15,7 +16,10 @@ export default function RootLayout({
   return (
     <html lang="es">
       <body>
-        <Providers>{children}</Providers>
+        <Providers>
+          {children}
+          {/* <ChatBot /> */}
+        </Providers>
       </body>
     </html>
   );
