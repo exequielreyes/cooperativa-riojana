@@ -4,6 +4,7 @@ import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/db";
 import { SiteHeader } from "@/components/layout/SiteHeader";
 import { PublicFooter } from "@/components/layout/PublicFooter";
+import AppChatBot from "@/components/ChatBot";
 
 export default async function PortalLayout({ children }: { children: React.ReactNode }) {
   const session = await getServerSession(authOptions);
@@ -17,7 +18,9 @@ export default async function PortalLayout({ children }: { children: React.React
   return (
     <div className="flex min-h-screen flex-col bg-surface-muted">
       <SiteHeader />
-      <main className="flex-1">{children}</main>
+      <main className="flex-1">{children}
+       <AppChatBot />
+      </main>
       <PublicFooter />
     </div>
   );
