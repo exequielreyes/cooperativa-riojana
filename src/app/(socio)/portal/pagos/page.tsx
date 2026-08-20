@@ -66,10 +66,15 @@ export default async function HistorialCuotasPage() {
                 <td className="px-6 py-3">{cuota.pago?.metodo ?? "—"}</td>
                 <td className="px-6 py-3">
                   {cuota.pago ? (
-                    <StatusBadge
-                      label={estadoLabel[cuota.pago.estadoValidacion]}
-                      tone={estadoTone[cuota.pago.estadoValidacion]}
-                    />
+                    <>
+                      <StatusBadge
+                        label={estadoLabel[cuota.pago.estadoValidacion]}
+                        tone={estadoTone[cuota.pago.estadoValidacion]}
+                      />
+                      {cuota.pago.estadoValidacion === "RECHAZADO" && cuota.pago.notaRechazo && (
+                        <p className="mt-1 max-w-xs text-xs text-gray-400">{cuota.pago.notaRechazo}</p>
+                      )}
+                    </>
                   ) : (
                     <StatusBadge label="Pendiente" tone="warning" />
                   )}

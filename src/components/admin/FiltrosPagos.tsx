@@ -4,30 +4,27 @@ import { useEffect, useRef, useState, useTransition } from "react";
 import { useRouter, useSearchParams, usePathname } from "next/navigation";
 import { Search, Loader2 } from "lucide-react";
 
-export function FiltrosSocios({ regiones }: { regiones: string[] }) {
+export function FiltrosPagos() {
   const router = useRouter();
   const pathname = usePathname();
   const searchParams = useSearchParams();
   const [isPending, startTransition] = useTransition();
 
   const [q, setQ] = useState(searchParams.get("q") ?? "");
-  const [region, setRegion] = useState(searchParams.get("region") ?? "");
   const [estado, setEstado] = useState(searchParams.get("estado") ?? "");
+  const [metodo, setMetodo] = useState(searchParams.get("metodo") ?? "");
   const primerRender = useRef(true);
 
-  // Siempre construye la URL a partir del estado local (q, region, estado),
-  // nunca leyendo de searchParams -> evita el race condition entre el texto
-  // recién tipeado y los selects que navegan de inmediato.
-  function actualizarUrl(next: { q: string; region: string; estado: string }) {
+  // Construye la URL siempre desde el estado local (q, estado, metodo),
+  // nunca leyendo de searchParams -> evita mezclar un texto recién tipeado
+  // con un select que navega de inmediato.
+  function actualizarUrl(next: { q: string; estado: string; metodo: string }) {
     const params = new URLSearchParams();
     if (next.q) params.set("q", next.q);
-    if (next.region) params.set("region", next.region);
     if (next.estado) params.set("estado", next.estado);
-    params.set("page", "1");
+    if (next.metodo) params.set("metodo", next.metodo);
 
     startTransition(() => {
-      // replace (no push) para no ensuciar el historial en cada tecleo,
-      // y scroll:false para no saltar al top de la página en cada búsqueda.
       router.replace(`${pathname}?${params.toString()}`, { scroll: false });
     });
   }
@@ -38,19 +35,19 @@ export function FiltrosSocios({ regiones }: { regiones: string[] }) {
       primerRender.current = false;
       return;
     }
-    const timeout = setTimeout(() => actualizarUrl({ q, region, estado }), 350);
+    const timeout = setTimeout(() => actualizarUrl({ q, estado, metodo }), 350);
     return () => clearTimeout(timeout);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [q]);
 
-  function onRegionChange(value: string) {
-    setRegion(value);
-    actualizarUrl({ q, region: value, estado });
-  }
-
   function onEstadoChange(value: string) {
     setEstado(value);
-    actualizarUrl({ q, region, estado: value });
+    actualizarUrl({ q, estado: value, metodo });
+  }
+
+  function onMetodoChange(value: string) {
+    setMetodo(value);
+    actualizarUrl({ q, estado, metodo: value });
   }
 
   return (
@@ -61,7 +58,7 @@ export function FiltrosSocios({ regiones }: { regiones: string[] }) {
           className="input pl-9 pr-9"
           value={q}
           onChange={(e) => setQ(e.target.value)}
-          placeholder="Buscar por nombre, ID o email..."
+          placeholder="Buscar por nombre, apellido, ID o email del socio..."
         />
         {isPending && (
           <Loader2
@@ -72,25 +69,23 @@ export function FiltrosSocios({ regiones }: { regiones: string[] }) {
       </div>
       <select
         className="input w-auto"
-        value={region}
-        onChange={(e) => onRegionChange(e.target.value)}
-      >
-        <option value="">Todas las Regiones</option>
-        {regiones.map((r) => (
-          <option key={r} value={r}>
-            {r}
-          </option>
-        ))}
-      </select>
-      <select
-        className="input w-auto"
         value={estado}
         onChange={(e) => onEstadoChange(e.target.value)}
       >
         <option value="">Todos los Estados</option>
-        <option value="ACTIVO">Activo</option>
-        <option value="PENDIENTE">Pendiente</option>
-        <option value="INACTIVO">Inactivo</option>
+        <option value="PENDIENTE_REVISION">Pendiente</option>
+        <option value="APROBADO">Completado</option>
+        <option value="RECHAZADO">Rechazado</option>
+      </select>
+      <select
+        className="input w-auto"
+        value={metodo}
+        onChange={(e) => onMetodoChange(e.target.value)}
+      >
+        <option value="">Todos los Métodos</option>
+        <option value="TRANSFERENCIA">Transferencia</option>
+        <option value="EFECTIVO">Efectivo</option>
+        <option value="MERCADOPAGO">MercadoPago</option>
       </select>
     </div>
   );
