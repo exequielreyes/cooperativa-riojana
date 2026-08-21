@@ -4,7 +4,7 @@ import { prisma } from "@/lib/db";
 import { formatDate } from "@/lib/utils";
 import { Pagination } from "@/components/noticias/Pagination";
 
-const PAGE_SIZE = 9;
+const PAGE_SIZE = 6;
 
 // Función auxiliar para calcular tiempo de lectura aproximado
 function getReadingTime(text: string): string {

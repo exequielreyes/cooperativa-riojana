@@ -168,8 +168,8 @@ export function ReportarPagoForm({
           <label className="mb-1 block text-xs text-gray-400">Método de pago</label>
           <select className="input" value={metodo} onChange={(e) => setMetodo(e.target.value)}>
             <option value="TRANSFERENCIA">Transferencia</option>
-            <option value="EFECTIVO">Efectivo</option>
-            <option value="MERCADOPAGO">MercadoPago</option>
+            {/* <option value="EFECTIVO">Efectivo</option> */}
+            <option value="MERCADOPAGO" disabled>Otro método (Próximamente)</option>
           </select>
         </div>
 

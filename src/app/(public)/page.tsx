@@ -68,11 +68,11 @@ export default async function HomePage() {
         </div>
       </section>
 
-
-      <section className="mx-auto max-w-6xl px-6 py-12">
+      {/* Implementacion a futuro */}
+      {/* <section className="mx-auto max-w-6xl px-6 py-12">
         <div className="grid gap-6 md:grid-cols-2">
           <div className="card-quick-access flex items-center gap-5 bg-primary/5 p-6">
-            <span className="icon-surface-muted">📊</span> {/* Reemplazar por icono real */}
+            <span className="icon-surface-muted">📊</span> 
             <div>
               <p className="font-semibold text-primary">Estado de Cuenta Rápido</p>
               <p className="text-sm text-gray-500">Consultá tu saldo actual, cuotas pendientes y beneficios
@@ -82,7 +82,7 @@ export default async function HomePage() {
             </div>
           </div>
           <div className="card-quick-access flex items-center gap-5 bg-primary/5 p-6">
-            <span className="icon-surface-muted">💳</span> {/* Reemplazar por icono real */}
+            <span className="icon-surface-muted">💳</span> 
             <div>
               <p className="font-semibold text-primary">Comprobante de Pago</p>
               <p className="text-sm text-gray-500">Descargá facturas de tus pagos mensuales y aportes. Aceptamos todas las tarjetas a través de nuestra integración con Macro Click.</p>
@@ -90,7 +90,7 @@ export default async function HomePage() {
             </div>
           </div>
         </div>
-      </section>
+      </section> */}
 
 
 
