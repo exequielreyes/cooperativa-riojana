@@ -19,6 +19,7 @@ export default async function EditarNoticiaPage({ params }: { params: { id: stri
           contenido: noticia.contenido,
           categoria: noticia.categoria,
           estado: noticia.estado,
+          imagenUrl: noticia.imagenUrl,
           redesSociales: noticia.redesSociales.map((r) => r.redSocial),
         }}
       />

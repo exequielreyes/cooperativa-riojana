@@ -3,7 +3,8 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { prisma } from "@/lib/db";
 import { formatDate } from "@/lib/utils";
-
+import { TextoConFormato } from "@/components/TextoConFormato";
+import { ContenidoNoticia } from "@/components/ContenidoNoticia";
 
 
 // Helper para calcular el tiempo de lectura
@@ -40,7 +41,7 @@ export default async function NoticiaDetallePage({ params }: { params: { slug: s
             {noticia.categoria || "Destacado"}
           </span>
           <h1 className="text-3xl font-extrabold text-slate-900 md:text-5xl leading-tight">
-            {noticia.titulo}
+           <TextoConFormato texto={noticia.titulo} />
           </h1>
 
           {/* Metadatos (Fecha, Lectura, Compartir) */}
@@ -78,7 +79,7 @@ export default async function NoticiaDetallePage({ params }: { params: { slug: s
 
         {/* CUERPO/CONTENIDO DE LA NOTICIA (Sin ficha técnica) */}
         <div className="prose prose-slate max-w-none prose-lg text-gray-700 leading-relaxed whitespace-pre-line">
-          {noticia.contenido}
+          <ContenidoNoticia texto={noticia.contenido} />
         </div>
 
       </article>
