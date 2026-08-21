@@ -45,7 +45,7 @@ export default async function AdminContenidosPage() {
         </div>
 
         <div className="space-y-6">
-          <div className="card">
+          {/* <div className="card">
             <div className="mb-2 flex items-center gap-2 text-primary-dark">
               <GraduationCap size={18} />
               <p className="font-medium">Talleres</p>
@@ -56,7 +56,7 @@ export default async function AdminContenidosPage() {
             <Link href="/admin/contenidos/talleres/nuevo" className="btn-primary block text-center">
               + Subir Nuevo Taller
             </Link>
-          </div>
+          </div> */}
 
           <div className="card border-status-danger/30">
             <div className="mb-2 flex items-center gap-2 text-status-danger">
