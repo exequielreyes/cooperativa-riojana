@@ -84,9 +84,10 @@ export default function NuevoSocioPage() {
           </div>
           <select className="input mt-4" name="region" defaultValue="">
             <option value="" disabled>Seleccione una región</option>
-            <option value="Rioja Alta">Rioja Alta</option>
-            <option value="Rioja Oriental">Rioja Oriental</option>
-            <option value="Valle del Ebro">Valle del Ebro</option>
+             <option value="Zona Sur">Zona Sur</option>
+            <option value="Zona Norte">Zona Norte</option>
+            <option value="Zona Este">Zona Este</option>
+            <option value="Zona Oeste">Zona Oeste</option>
           </select>
         </div>
 

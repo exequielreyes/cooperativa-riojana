@@ -72,9 +72,10 @@ export function EditarSocioForm({ socio }: { socio: SocioEditable }) {
           <input className="input" name="telefono" defaultValue={socio.telefono} placeholder="Teléfono" />
           <select className="input" name="region" defaultValue={socio.region}>
             <option value="">Seleccione una región</option>
-            <option value="Rioja Alta">Rioja Alta</option>
-            <option value="Rioja Oriental">Rioja Oriental</option>
-            <option value="Valle del Ebro">Valle del Ebro</option>
+           <option value="Zona Sur">Zona Sur</option>
+            <option value="Zona Norte">Zona Norte</option>
+            <option value="Zona Este">Zona Este</option>
+            <option value="Zona Oeste">Zona Oeste</option>
           </select>
         </div>
         <input className="input mt-4" name="direccion" defaultValue={socio.direccion} placeholder="Dirección Completa" />
