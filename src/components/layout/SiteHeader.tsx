@@ -71,7 +71,7 @@ export function SiteHeader() {
  <div className="hidden lg:flex items-center gap-3 text-gray-500">
             {/* Facebook */}
             <a
-              href="https://facebook.com"
+              href="https://www.facebook.com/profile.php?id=61593704152272"
               target="_blank"
               rel="noopener noreferrer"
               aria-label="Facebook"
@@ -84,7 +84,7 @@ export function SiteHeader() {
 
             {/* Instagram */}
             <a
-              href="https://instagram.com"
+              href="https://www.instagram.com/cooperativariojana/"
               target="_blank"
               rel="noopener noreferrer"
               aria-label="Instagram"
@@ -97,7 +97,7 @@ export function SiteHeader() {
 
             {/* LinkedIn */}
             <a
-              href="https://linkedin.com"
+              href="https://www.linkedin.com/in/cooperativa-riojana-ltda-8284b842b/"
               target="_blank"
               rel="noopener noreferrer"
               aria-label="LinkedIn"
