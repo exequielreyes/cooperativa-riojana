@@ -9,7 +9,7 @@ export function ConfiguracionCuotaCard({ montoActual }: { montoActual: number })
   const [editando, setEditando] = useState(false);
   const [monto, setMonto] = useState(montoActual.toString());
   const [guardando, setGuardando] = useState(false);
-  const [generando, setGenerando] = useState(false);
+  const [generando, setGenerando] = useState<"mensual" | "anual" | null>(null);
   const [mensaje, setMensaje] = useState<string | null>(null);
 
   async function guardarMonto() {
@@ -27,10 +27,10 @@ export function ConfiguracionCuotaCard({ montoActual }: { montoActual: number })
   }
 
   async function generarCuotaMensual() {
-    setGenerando(true);
+    setGenerando("mensual");
     setMensaje(null);
     const res = await fetch("/api/cuotas/generar-mensual", { method: "POST" });
-    setGenerando(false);
+    setGenerando(null);
 
     if (!res.ok) {
       setMensaje("No se pudo generar la cuota.");
@@ -44,6 +44,28 @@ export function ConfiguracionCuotaCard({ montoActual }: { montoActual: number })
     );
     router.refresh();
   }
+
+
+async function generarCuotaAnual() {
+    if (!confirm("¿Generar la cuota anual (12 meses) para todos los socios activos que todavía no la tengan?")) return;
+    setGenerando("anual");
+    setMensaje(null);
+    const res = await fetch("/api/cuotas/generar-anual", { method: "POST" });
+    setGenerando(null);
+
+    if (!res.ok) {
+      setMensaje("No se pudo generar la cuota anual.");
+      return;
+    }
+    const data = await res.json();
+    setMensaje(
+      data.generadas > 0
+        ? `Se generó la cuota anual (${data.periodo}) para ${data.generadas} socio(s).`
+        : `Todos los socios activos ya tenían generada la cuota anual.`
+    );
+    router.refresh();
+  }
+
 
   return (
     <div className="card">
@@ -75,8 +97,11 @@ export function ConfiguracionCuotaCard({ montoActual }: { montoActual: number })
         </div>
       )}
 
-      <button className="btn-secondary w-full" disabled={generando} onClick={generarCuotaMensual}>
-        {generando ? "Generando..." : "Generar cuota del mes para socios activos"}
+      <button className="btn-secondary w-full" disabled={generando !== null} onClick={generarCuotaMensual}>
+        {generando === "mensual" ? "Generando..." : "Generar cuota del mes para socios activos"}
+      </button>
+      <button className="btn-secondary mt-2 w-full" disabled={generando !== null} onClick={generarCuotaAnual}>
+        {generando === "anual" ? "Generando..." : "Generar cuota anual (12 meses) para socios activos"}
       </button>
 
       {mensaje && <p className="mt-2 text-xs text-gray-500">{mensaje}</p>}
