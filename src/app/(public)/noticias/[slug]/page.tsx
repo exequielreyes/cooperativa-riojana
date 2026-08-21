@@ -22,7 +22,8 @@ export default async function NoticiaDetallePage({ params }: { params: { slug: s
   const noticiasRelacionadas = await prisma.noticia.findMany({
     where: {
       estado: "PUBLICADO",
-      NOT: { id: noticia.id },
+      categoria: noticia.categoria,
+      id: { not: noticia.id },
     },
     orderBy: { fechaPublicacion: "desc" },
     take: 3,
