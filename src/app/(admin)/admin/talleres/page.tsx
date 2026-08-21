@@ -85,6 +85,7 @@ export default async function AdminTalleresPage() {
               <th className="px-6 py-3 font-normal">Fecha</th>
               <th className="px-6 py-3 font-normal">Categoría</th>
               <th className="px-6 py-3 font-normal">Inscriptos</th>
+              <th className="px-6 py-3 font-normal">Contenido</th>
             </tr>
           </thead>
           <tbody>
@@ -94,6 +95,14 @@ export default async function AdminTalleresPage() {
                 <td className="px-6 py-3">{formatDate(taller.fecha)}</td>
                 <td className="px-6 py-3">{taller.categoria}</td>
                 <td className="px-6 py-3">{taller._count.inscripciones} / {taller.cuposTotales}</td>
+                <td className="px-6 py-3">
+                  <Link
+                    href={`/admin/contenidos/talleres/${taller.id}/materiales`}
+                    className="text-primary hover:underline"
+                  >
+                    Gestionar
+                  </Link>
+                </td>
               </tr>
             ))}
           </tbody>
