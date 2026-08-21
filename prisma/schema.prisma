@@ -109,6 +109,7 @@ model Socio {
   tipoMiembro     TipoMiembro @default(PRODUCTOR)
   estado          EstadoSocio @default(PENDIENTE)
   fotoUrl         String?
+  moodleUserId    Int?        // id numerico del usuario en Moodle (cache, evita recrearlo)
 
   createdAt       DateTime    @default(now())
   updatedAt       DateTime    @updatedAt
@@ -212,12 +213,14 @@ model Taller {
   requisitos        String?          @db.Text
   queAprenderas     String?          @db.Text
   materialUrl       String?
+  moodleCourseId    Int?             // id numerico del curso en Moodle (LMS)
   estado            String           @default("ACTIVO") // ACTIVO, FINALIZADO, CANCELADO
 
   createdAt         DateTime         @default(now())
   updatedAt         DateTime         @updatedAt
 
   inscripciones     InscripcionTaller[]
+  contenidos        ContenidoTaller[]
 
   @@map("talleres")
   @@index([fecha])
@@ -273,4 +276,29 @@ model NoticiaRedSocial {
 
   @@map("noticia_redes_sociales")
   @@unique([noticiaId, redSocial])
+}
+
+// Contenido / material didáctico que el profesor sube para un taller
+// (mini-LMS nativo: documentos, videos embebidos o enlaces externos)
+model ContenidoTaller {
+  id          String              @id @default(cuid())
+  tallerId    String
+  taller      Taller              @relation(fields: [tallerId], references: [id], onDelete: Cascade)
+
+  titulo      String
+  descripcion String?             @db.Text
+  tipo        TipoContenidoTaller @default(DOCUMENTO)
+  url         String              // archivo subido (/uploads/...) o link externo (YouTube, Drive, etc.)
+  orden       Int                 @default(0)
+
+  createdAt   DateTime            @default(now())
+
+  @@map("contenidos_taller")
+  @@index([tallerId])
+}
+
+enum TipoContenidoTaller {
+  DOCUMENTO // PDF u otro archivo subido
+  VIDEO     // link embebible (YouTube, Vimeo)
+  ENLACE    // link externo genérico (Drive, sitio externo, etc.)
 }

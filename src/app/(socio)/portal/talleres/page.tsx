@@ -17,7 +17,7 @@ export default async function MisTalleresPage() {
     prisma.socio.findUnique({ where: { id: socioId } }),
     prisma.inscripcionTaller.findMany({
       where: { socioId },
-      include: { taller: true },
+      include: { taller: { include: { _count: { select: { contenidos: true } } } } },
       orderBy: { fechaInscripcion: "desc" },
     }),
   ]);
@@ -80,6 +80,19 @@ export default async function MisTalleresPage() {
                       className="btn-secondary"
                     >
                       Ver Material
+                    </a>
+                  )}
+                  {inscripcion.estado === "CONFIRMADO" && (
+                    <a
+                      href={`/portal/talleres/${inscripcion.taller.id}/contenido`}
+                      className="btn-primary"
+                    >
+                      Ver Contenido del Taller
+                      {inscripcion.taller._count.contenidos > 0 && (
+                        <span className="ml-1.5 rounded-full bg-white/20 px-1.5 py-0.5 text-[10px]">
+                          {inscripcion.taller._count.contenidos}
+                        </span>
+                      )}
                     </a>
                   )}
                   {inscripcion.estado !== "CANCELADO" ? (
