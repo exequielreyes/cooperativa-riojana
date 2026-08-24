@@ -25,6 +25,7 @@
     "react-chatbotify": "^2.5.0",
     "react-dom": "^18.3.1",
     "recharts": "^2.12.7",
+    "resend": "^6.22.0",
     "zod": "^3.25.76"
   },
   "devDependencies": {
