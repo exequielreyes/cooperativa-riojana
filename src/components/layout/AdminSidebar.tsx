@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { signOut } from "next-auth/react";
-import { LayoutDashboard, Users, CreditCard, Newspaper, GraduationCap, Settings, LogOut } from "lucide-react";
+import { LayoutDashboard, Users, CreditCard, Newspaper, GraduationCap, BookOpen, Settings, LogOut } from "lucide-react";
 
 
 interface Contadores {
@@ -23,6 +23,7 @@ const links = [
   { href: "/admin/pagos", label: "Pagos", icon: CreditCard, badge: contadores.pagos },
   { href: "/admin/talleres", label: "Talleres", icon: GraduationCap, badge: contadores.talleres },
   { href: "/admin/contenidos", label: "Contenidos", icon: Newspaper, badge: 0 },
+   { href: "/admin/secciones", label: "Secciones", icon: BookOpen, badge: 0 },
   { href: "/admin/configuracion", label: "Configuración", icon: Settings, badge: 0 },
 ];
 
