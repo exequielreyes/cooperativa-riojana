@@ -79,6 +79,24 @@ prisma/
   pendiente; queda en estado "En revisión".
 - **Validar pagos**: el admin aprueba o rechaza desde el listado; al aprobar,
   la cuota pasa a `PAGADO` automáticamente.
+
+## ⚠️ Actualización / Migración de Base de Datos (Módulo de Pagos)
+### 📌 Cambios realizados
+- Ahora, si un pago es rechazado, se permite realizar un nuevo registro y se visualiza el motivo del rechazo.
+### 🛠️ Pasos obligatorios para actualizar el entorno local
+Para que los cambios impacten correctamente en la base de datos y Prisma no bloquee las relaciones, seguí estos pasos:
+#### 1. Ejecutar script SQL
+Abrí el gestor de base de datos (MySQL Workbench) y ejecutá:
+
+USE cooperativa_riojana;
+-- 1. Creamos primero un índice normal no único para que la FK se apoye en él
+CREATE INDEX pagos_cuotaId_idx ON pagos(cuotaId);
+-- 2. Eliminamos el índice UNIQUE anterior que bloqueaba Prisma
+ALTER TABLE pagos DROP INDEX pagos_cuotaId_key;
+
+#### 2. Ejecutar en la terminal dentro de la raiz del proyecto:
+  npx prisma db push
+
 - **Talleres**: listado público con cupos en tiempo real, inscripción desde
   el detalle del taller, y vista de "Mis Talleres" para el socio.
 - **Métricas del admin** con agregados reales (socios activos, recaudación
