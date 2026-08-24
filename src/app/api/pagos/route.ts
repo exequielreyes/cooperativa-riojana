@@ -40,19 +40,24 @@ export async function POST(request: NextRequest) {
 
   const cuotas = await prisma.cuota.findMany({
     where: { id: { in: cuotaIds }, socioId: session.user.socioId },
-    include: { pago: true },
+     include: { pagos: { orderBy: { fechaPago: "desc" } } },
   });
 
-  // Todas las cuotas pedidas tienen que existir, ser del socio logueado,
-  // y no tener ya un pago registrado (Pago.cuotaId es único).
-  if (cuotas.length !== cuotaIds.length) {
-    return NextResponse.json({ error: "Alguna cuota seleccionada no es válida" }, { status: 404 });
-  }
-  if (cuotas.some((c) => c.pago)) {
-    return NextResponse.json(
-      { error: "Una de las cuotas seleccionadas ya tiene un pago registrado. Actualizá la página e intentá de nuevo." },
-      { status: 409 }
-    );
+  // Validar estados de los últimos pagos de las cuotas seleccionadas
+  for (const cuota of cuotas) {
+    const ultimoPago = cuota.pagos[0];
+    if (ultimoPago?.estadoValidacion === "PENDIENTE_REVISION") {
+      return NextResponse.json(
+        { error: `La cuota ${cuota.periodo} ya tiene un comprobante en revisión.` },
+        { status: 409 }
+      );
+    }
+    if (ultimoPago?.estadoValidacion === "APROBADO") {
+      return NextResponse.json(
+        { error: `La cuota ${cuota.periodo} ya está pagada.` },
+        { status: 409 }
+      );
+    }
   }
 
   const comprobanteUrl = await guardarArchivo(comprobante, "comprobantes");

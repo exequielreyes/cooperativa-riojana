@@ -5,11 +5,13 @@ import { useRouter } from "next/navigation";
 import { formatCurrency, formatDate } from "@/lib/utils";
 import { VolverAlPanel } from "@/components/socio/VolverAlPanel";
 
-interface Cuota {
+interface CuotaSeleccionable {
   id: string;
   periodo: string;
   monto: number;
   fechaVencimiento: string;
+  enRevision: boolean;
+  motivoRechazo: string | null;
 }
 
 interface DatosTransferencia {
@@ -19,9 +21,11 @@ interface DatosTransferencia {
 
 export function ReportarPagoForm({
   cuotas,
+  cuotaPreseleccionadaId,
   datosTransferencia,
 }: {
-  cuotas: Cuota[];
+  cuotas: CuotaSeleccionable[];
+  cuotaPreseleccionadaId: string;
   datosTransferencia: DatosTransferencia;
 }) {
   const router = useRouter();
@@ -32,13 +36,15 @@ export function ReportarPagoForm({
   const [error, setError] = useState<string | null>(null);
   // Por defecto se preselecciona sólo la cuota más antigua (ya vienen
   // ordenadas por fechaVencimiento asc desde el server).
-  const [cuotaIds, setCuotaIds] = useState<string[]>([cuotas[0].id]);
+  const [cuotaIds, setCuotaIds] = useState<string[]>([cuotaPreseleccionadaId]);
 
-  const cuotasSeleccionadas = cuotas.filter((c) => cuotaIds.includes(c.id));
+ const cuotasSeleccionadas = cuotas.filter((c) => cuotaIds.includes(c.id));
   const totalMonto = cuotasSeleccionadas.reduce((acc, c) => acc + c.monto, 0);
-  const todasSeleccionadas = cuotaIds.length === cuotas.length;
+  const todasSeleccionadas = cuotaIds.length === cuotas.filter((c) => !c.enRevision).length;
 
   function toggleCuota(id: string) {
+     const cuota = cuotas.find((c) => c.id === id);
+    if (cuota?.enRevision) return; // No permitir seleccionar cuotas en revisión
     setCuotaIds((prev) => {
       if (prev.includes(id)) {
         if (prev.length === 1) return prev; // no permitir dejar 0 cuotas seleccionadas
@@ -49,11 +55,16 @@ export function ReportarPagoForm({
   }
 
   function togglePagarTodoJunto(checked: boolean) {
-    setCuotaIds(checked ? cuotas.map((c) => c.id) : [cuotas[0].id]);
+    const cuotasDisponibles = cuotas.filter((c) => !c.enRevision);
+    setCuotaIds(checked ? cuotasDisponibles.map((c) => c.id) : [cuotasDisponibles[0].id]);
   }
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
+    if (cuotasSeleccionadas.some((c) => c.enRevision)) {
+      setError("Alguna de las cuotas seleccionadas ya tiene un pago en revisión.");
+      return;
+    }
     if (!archivo) {
       setError("Adjuntá el comprobante antes de continuar.");
       return;
@@ -128,21 +139,26 @@ export function ReportarPagoForm({
             {cuotas.map((c) => (
               <label
                 key={c.id}
-                className="flex cursor-pointer items-center justify-between rounded-lg border border-surface-border px-3 py-2 text-sm hover:bg-surface-muted"
+                className={`flex items-center justify-between rounded-lg border border-surface-border px-3 py-2 text-sm ${
+                  c.enRevision ? "opacity-55 cursor-not-allowed bg-surface-muted" : "cursor-pointer hover:bg-surface-muted"}`}
               >
                 <span className="flex items-center gap-2">
                   <input
                     type="checkbox"
                     checked={cuotaIds.includes(c.id)}
                     onChange={() => toggleCuota(c.id)}
-                    disabled={enviando}
+                    disabled={enviando || c.enRevision}
                   />
                   <span>
                     {c.periodo}{" "}
                     <span className="text-xs text-gray-400">(vence {formatDate(c.fechaVencimiento)})</span>
                   </span>
                 </span>
-                <span className="font-medium text-primary-dark">{formatCurrency(c.monto)}</span>
+               <div className="flex items-center gap-3">
+                  {c.enRevision && <span className="text-xs font-medium text-status-warning">En revisión</span>}
+                  {c.motivoRechazo && <span className="text-xs font-medium text-status-danger">Rechazado antes</span>}
+                  <span className="font-medium text-primary-dark">{formatCurrency(c.monto)}</span>
+                </div>
               </label>
             ))}
           </div>
@@ -164,6 +180,11 @@ export function ReportarPagoForm({
       </div>
 
       <form className="card space-y-4" onSubmit={handleSubmit}>
+        {cuotasSeleccionadas.some((c) => c.motivoRechazo) && (
+          <div className="rounded-lg bg-status-danger/5 p-3 text-sm text-status-danger">
+            Alguna de las cuotas seleccionadas tiene un comprobante rechazado previo. Podés volver a subirlo corregido.
+          </div>
+        )}
         <div>
           <label className="mb-1 block text-xs text-gray-400">Método de pago</label>
           <select className="input" value={metodo} onChange={(e) => setMetodo(e.target.value)}>

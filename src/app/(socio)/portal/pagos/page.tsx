@@ -23,7 +23,7 @@ export default async function HistorialCuotasPage() {
 
   const cuotas = await prisma.cuota.findMany({
     where: { socioId },
-    include: { pago: true },
+    include: { pagos: { orderBy: { fechaPago: "desc" }, take: 1 } },
     orderBy: { fechaVencimiento: "desc" },
   });
 
@@ -56,23 +56,25 @@ export default async function HistorialCuotasPage() {
                 </td>
               </tr>
             )}
-            {cuotas.map((cuota) => (
+            {cuotas.map((cuota) => {
+              const pago = cuota.pagos[0];
+              return (
               <tr key={cuota.id} className="border-b border-surface-border last:border-0">
                 <td className="px-6 py-3">{cuota.concepto} {cuota.periodo}</td>
                 <td className="px-6 py-3">{formatCurrency(Number(cuota.monto))}</td>
                 <td className="px-6 py-3">
-                  {cuota.pago ? formatDate(cuota.pago.fechaPago) : "—"}
+                  {pago ? formatDate(pago.fechaPago) : "—"}
                 </td>
-                <td className="px-6 py-3">{cuota.pago?.metodo ?? "—"}</td>
+                <td className="px-6 py-3">{pago?.metodo ?? "—"}</td>
                 <td className="px-6 py-3">
-                  {cuota.pago ? (
+                  {pago ? (
                     <>
                       <StatusBadge
-                        label={estadoLabel[cuota.pago.estadoValidacion]}
-                        tone={estadoTone[cuota.pago.estadoValidacion]}
+                        label={estadoLabel[pago.estadoValidacion]}
+                        tone={estadoTone[pago.estadoValidacion]}
                       />
-                      {cuota.pago.estadoValidacion === "RECHAZADO" && cuota.pago.notaRechazo && (
-                        <p className="mt-1 max-w-xs text-xs text-gray-400">{cuota.pago.notaRechazo}</p>
+                      {pago.estadoValidacion === "RECHAZADO" && pago.notaRechazo && (
+                        <p className="mt-1 max-w-xs text-xs text-gray-400">{pago.notaRechazo}</p>
                       )}
                     </>
                   ) : (
@@ -80,7 +82,8 @@ export default async function HistorialCuotasPage() {
                   )}
                 </td>
               </tr>
-            ))}
+            )
+            })}
           </tbody>
         </table>
       </div>

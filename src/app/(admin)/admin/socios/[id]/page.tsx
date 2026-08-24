@@ -18,9 +18,12 @@ export default async function PerfilSocioAdminPage({ params }: { params: { id: s
     where: { id: params.id },
     include: {
       grupoFamiliar: true,
-      cuotas: { orderBy: { fechaVencimiento: "desc" }, include: { pago: true } },
-    },
-  });
+      cuotas: {
+        orderBy: { fechaVencimiento: "desc" },
+        include: { pagos: { orderBy: { fechaPago: "desc" }, take: 1 } },
+      },
+    }
+    });
   if (!socio) notFound();
 
   const cuotasPendientes = socio.cuotas.filter((c) => c.estado !== "PAGADO");
@@ -84,16 +87,23 @@ export default async function PerfilSocioAdminPage({ params }: { params: { id: s
               </tr>
             </thead>
             <tbody>
-              {cuotasPendientes.map((cuota) => (
+              {cuotasPendientes.map((cuota) => {
+                const enRevision = cuota.pagos[0]?.estadoValidacion === "PENDIENTE_REVISION";
+                return (
                 <tr key={cuota.id} className="border-b border-surface-border last:border-0">
                   <td className="px-6 py-3">{cuota.periodo}</td>
                   <td className="px-6 py-3">{formatDate(cuota.fechaVencimiento)}</td>
                   <td className="px-6 py-3">{formatCurrency(Number(cuota.monto))}</td>
                   <td className="px-6 py-3">
-                    <MarcarPagadoEfectivo cuotaId={cuota.id} />
+                    {enRevision ? (
+                        <StatusBadge label="Comprobante en revisión" tone="warning" />
+                      ) : (
+                        <MarcarPagadoEfectivo cuotaId={cuota.id} />
+                      )}
                   </td>
                 </tr>
-              ))}
+                );
+    })}
             </tbody>
           </table>
         )}
