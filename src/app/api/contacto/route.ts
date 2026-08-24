@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
+import { enviarEmailContacto } from "@/lib/email";
 
 const contactoSchema = z.object({
   nombre: z.string().min(1, "El nombre es obligatorio"),
@@ -19,18 +20,18 @@ export async function POST(request: NextRequest) {
     );
   }
 
-  const { nombre, email, asunto, mensaje } = parsed.data;
-
-  // TODO: reemplazar por el envío real (email transaccional) y/o
-  // persistir la consulta en una tabla propia de Prisma
-  // (por ejemplo `ConsultaContacto`) para que el panel admin pueda listarlas.
-  console.log("Nueva consulta de contacto:", {
-    nombre,
-    email,
-    asunto,
-    mensaje,
-    fecha: new Date().toISOString(),
-  });
+  try {
+    await enviarEmailContacto(parsed.data);
+  } catch (error) {
+    console.error("Error enviando email de contacto:", error);
+    return NextResponse.json(
+      {
+        error:
+          "No se pudo enviar tu consulta por email. Por favor, intentá nuevamente o escribinos directamente a contacto@coopriojana.com.ar.",
+      },
+      { status: 502 }
+    );
+  }
 
   return NextResponse.json({ ok: true }, { status: 201 });
 }
