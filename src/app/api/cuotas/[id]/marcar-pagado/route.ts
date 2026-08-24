@@ -12,9 +12,15 @@ export async function POST(
     return NextResponse.json({ error: "No autorizado" }, { status: 403 });
   }
 
-  const cuota = await prisma.cuota.findUnique({ where: { id: params.id }, include: { pago: true } });
+  const cuota = await prisma.cuota.findUnique({ where: { id: params.id }, include: { pagos: true } });
   if (!cuota) return NextResponse.json({ error: "No encontrada" }, { status: 404 });
-  if (cuota.pago) return NextResponse.json({ error: "Esta cuota ya tiene un pago registrado" }, { status: 409 });
+  const tienePagoVigente = cuota.pagos.some((p) => p.estadoValidacion !== "RECHAZADO");
+  if (tienePagoVigente) {
+    return NextResponse.json(
+      { error: "Esta cuota ya tiene un pago registrado o en revisión" },
+      { status: 409 }
+    );
+  }
 
   const pago = await prisma.pago.create({
     data: {

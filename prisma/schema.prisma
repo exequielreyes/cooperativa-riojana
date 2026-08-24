@@ -165,7 +165,7 @@ model Cuota {
   fechaVencimiento  DateTime
   estado            EstadoCuota @default(PENDIENTE)
 
-  pago              Pago?
+  pagos              Pago[]
 
   createdAt         DateTime    @default(now())
 
@@ -175,7 +175,7 @@ model Cuota {
 
 model Pago {
   id                  String                @id @default(cuid())
-  cuotaId             String                @unique
+  cuotaId             String                
   cuota               Cuota                 @relation(fields: [cuotaId], references: [id])
   socioId             String
   socio               Socio                 @relation(fields: [socioId], references: [id])
@@ -194,6 +194,7 @@ model Pago {
   @@map("pagos")
   @@index([socioId])
   @@index([estadoValidacion])
+  @@index([cuotaId])
 }
 
 model Taller {
