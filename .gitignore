@@ -6,3 +6,5 @@ dist
 *.log
 public/uploads/*
 !public/uploads/**/.gitkeep
+docker-compose.yml
+tsconfig.tsbuildinfo
