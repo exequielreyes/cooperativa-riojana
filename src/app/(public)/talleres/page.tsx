@@ -5,7 +5,17 @@ import { prisma } from "@/lib/db";
 export default async function TalleresPage() {
   const talleres = await prisma.taller.findMany({
     where: { estado: "ACTIVO" },
-    include: { _count: { select: { inscripciones: true } } },
+    include: {
+      _count: {
+        select: {
+          inscripciones: {
+            where: {
+              estado: "CONFIRMADO",
+            },
+          },
+        },
+      },
+    },
     orderBy: { fecha: "asc" },
   });
 

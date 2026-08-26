@@ -23,7 +23,17 @@ export default async function AdminTalleresPage() {
       orderBy: { fechaInscripcion: "asc" },
     }),
     prisma.taller.findMany({
-      include: { _count: { select: { inscripciones: true } } },
+      include: {
+        _count: {
+          select: {
+            inscripciones: {
+              where: {
+                estado: "CONFIRMADO",
+              },
+            },
+          },
+        },
+      },
       orderBy: { fecha: "asc" },
     }),
   ]);
