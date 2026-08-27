@@ -318,3 +318,46 @@ enum TipoContenidoTaller {
   VIDEO     // link embebible (YouTube, Vimeo)
   ENLACE    // link externo genérico (Drive, sitio externo, etc.)
 }
+
+// Contenido editable de la página pública "/quienes-somos" (Acerca de
+// Nosotros). Registro único (patrón singleton, igual que
+// ConfiguracionCooperativa) que el admin edita desde
+// /admin/secciones/acerca-de-nosotros.
+model ContenidoNosotros {
+  id                String   @id @default("singleton")
+
+  // --- Hero ---
+  heroBadge         String   @db.Text
+  heroTitulo        String   @db.Text
+  heroDescripcion   String   @db.Text
+  heroBotonTexto    String   @db.Text
+  heroImagenUrl     String?
+
+  // --- Misión / Visión / Valores ---
+  textoMision       String   @db.Text
+  textoVision       String   @db.Text
+  valores           Json     // [{ titulo, descripcion }] x4 (orden fijo, ligado a un ícono cada uno)
+
+  // --- Nuestros Orígenes ---
+  origenesLabel       String @db.Text
+  origenesTitulo      String @db.Text
+  origenesParrafo1    String @db.Text
+  origenesParrafo2    String @db.Text
+  origenesParrafo3    String @db.Text
+  origenesImagenUrl   String?
+  origenesBadgeNumero String @db.Text
+  origenesBadgeTexto  String @db.Text
+  origenesHito1Titulo String @db.Text
+  origenesHito1Texto  String @db.Text
+  origenesHito2Titulo String @db.Text
+  origenesHito2Texto  String @db.Text
+
+  // --- Compromiso Social y Ambiental ---
+  compromisoTitulo      String @db.Text
+  compromisoDescripcion String @db.Text
+  iniciativas            Json  // [{ titulo, descripcion, imagenUrl }] x3
+
+  updatedAt DateTime @updatedAt
+
+  @@map("contenido_nosotros")
+}
