@@ -13,6 +13,7 @@ export default async function PortalDashboardPage() {
     prisma.socio.findUnique({ where: { id: socioId } }),
     prisma.cuota.findMany({
       where: { socioId, estado: { in: ["PENDIENTE", "VENCIDO"] } },
+      include: { pagos: true },
       orderBy: { fechaVencimiento: "asc" },
     }),
     prisma.pago.findMany({
@@ -24,7 +25,18 @@ export default async function PortalDashboardPage() {
   ]);
 
   const balance = cuotasPendientes.reduce((acc, c) => acc + Number(c.monto), 0);
-  const proximaCuota = cuotasPendientes[0];
+
+  const sinRevision = cuotasPendientes.filter(
+    (c) => !c.pagos.some((p) => p.estadoValidacion === "PENDIENTE_REVISION"),
+  );
+  const hoy = new Date();
+  const proximaCuota =
+    sinRevision.find((c) => c.fechaVencimiento >= hoy) ??
+    sinRevision[sinRevision.length - 1] ??
+    null;
+  const cuotasEnRevision = cuotasPendientes.filter((c) =>
+    c.pagos.some((p) => p.estadoValidacion === "PENDIENTE_REVISION"),
+  );
   const alDia = cuotasPendientes.length === 0;
 
   return (
@@ -53,7 +65,15 @@ export default async function PortalDashboardPage() {
               <p className="mt-1 text-2xl font-semibold text-primary-dark">
                 {proximaCuota ? formatDate(proximaCuota.fechaVencimiento) : "—"}
               </p>
-              <p className="text-xs text-status-warning">{proximaCuota?.periodo ?? "Sin cuotas pendientes"}</p>
+              <p className="text-xs text-status-warning">
+                {proximaCuota?.periodo ?? "Sin cuotas pendientes"}
+                {proximaCuota?.fechaVencimiento < hoy && (
+                  <span className="ml-1 text-status-danger">· Vencido</span>
+                )}
+                {cuotasEnRevision.length > 0 && (
+                  <span className="ml-1 text-gray-400">(pago en revisión)</span>
+                )}
+              </p>
             </div>
           </div>
 
