@@ -14,7 +14,17 @@ export async function POST(
 
   const taller = await prisma.taller.findUnique({
     where: { id: params.id },
-    include: { _count: { select: { inscripciones: true } } },
+    include: {
+      _count: {
+        select: {
+          inscripciones: {
+            where: {
+              estado: "CONFIRMADO",
+            },
+          },
+        },
+      },
+    },
   });
 
   if (!taller) {

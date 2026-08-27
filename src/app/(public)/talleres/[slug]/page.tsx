@@ -6,7 +6,17 @@ import { BotonInscripcion } from "@/components/socio/BotonInscripcion";
 export default async function TallerDetallePage({ params }: { params: { slug: string } }) {
   const taller = await prisma.taller.findUnique({
     where: { slug: params.slug },
-    include: { _count: { select: { inscripciones: true } } },
+    include: {
+      _count: {
+        select: {
+          inscripciones: {
+            where: {
+              estado: "CONFIRMADO",
+            },
+          },
+        },
+      },
+    },
   });
 
   if (!taller) notFound();
