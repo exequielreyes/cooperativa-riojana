@@ -16,8 +16,24 @@ export default async function MisTalleresPage() {
   const [socio, inscripciones] = await Promise.all([
     prisma.socio.findUnique({ where: { id: socioId } }),
     prisma.inscripcionTaller.findMany({
-      where: { socioId },
-      include: { taller: { include: { _count: { select: { contenidos: true } } } } },
+      where: {
+        socioId,
+        estado: {
+          in: ["PENDIENTE", "CONFIRMADO"],
+        },
+      },
+      include: {
+        taller: {
+          include: {
+            _count: {
+              select: {
+                contenidos: true,
+              },
+            },
+          },
+        },
+      },
+      orderBy: { fechaInscripcion: "desc" },
       orderBy: { fechaInscripcion: "desc" },
     }),
   ]);

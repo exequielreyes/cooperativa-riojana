@@ -39,7 +39,10 @@ export async function POST(
     where: {
       tallerId_socioId: { tallerId: taller.id, socioId: session.user.socioId },
     },
-    update: {},
+    update: {
+      estado: "PENDIENTE",
+      fechaInscripcion: new Date(),
+    },
     create: {
       tallerId: taller.id,
       socioId: session.user.socioId,
