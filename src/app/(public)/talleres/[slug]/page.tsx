@@ -40,7 +40,7 @@ export default async function TallerDetallePage({
   });
 
   if (!taller) notFound();
-  const miInscripcion = taller.inscripciones[0];
+  const miInscripcion = taller.inscripciones?.[0];
   const yaEstaInscripto = miInscripcion?.estado === "CONFIRMADO";
   const inscripcionPendiente = miInscripcion?.estado === "PENDIENTE";
   const cuposDisponibles = taller.cuposTotales - taller._count.inscripciones;
