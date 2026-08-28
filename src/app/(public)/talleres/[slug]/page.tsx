@@ -1,9 +1,19 @@
 import { notFound } from "next/navigation";
 import Image from "next/image";
+import { getServerSession } from "next-auth";
+import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/db";
 import { BotonInscripcion } from "@/components/socio/BotonInscripcion";
 
-export default async function TallerDetallePage({ params }: { params: { slug: string } }) {
+
+export default async function TallerDetallePage({
+  params,
+}: {
+  params: { slug: string };
+}) {
+  const session = await getServerSession(authOptions);
+  const socioId = session?.user?.socioId;
+
   const taller = await prisma.taller.findUnique({
     where: { slug: params.slug },
     include: {
@@ -16,11 +26,23 @@ export default async function TallerDetallePage({ params }: { params: { slug: st
           },
         },
       },
+      inscripciones: socioId
+        ? {
+            where: {
+              socioId,
+            },
+            select: {
+              estado: true,
+            },
+          }
+        : false,
     },
   });
 
   if (!taller) notFound();
-
+  const miInscripcion = taller.inscripciones?.[0];
+  const yaEstaInscripto = miInscripcion?.estado === "CONFIRMADO";
+  const inscripcionPendiente = miInscripcion?.estado === "PENDIENTE";
   const cuposDisponibles = taller.cuposTotales - taller._count.inscripciones;
 
   return (
@@ -180,13 +202,24 @@ export default async function TallerDetallePage({ params }: { params: { slug: st
 
             {/* BOTONES DE ACCIÓN */}
             <div className="pt-4 space-y-3">
-              {cuposDisponibles > 0 ? (
-                <BotonInscripcion tallerId={taller.id} />
-              ) : (
-                <button disabled className="w-full rounded-xl bg-gray-200 py-3 text-xs font-bold text-gray-500 cursor-not-allowed">
-                  Sin cupos disponibles
-                </button>
-              )}
+            {yaEstaInscripto ? (
+  <p className="w-full rounded-xl bg-green-50 py-3 text-center text-xs font-bold text-green-700">
+    ✓ Ya estás inscripto
+  </p>
+) : inscripcionPendiente ? (
+  <p className="w-full rounded-xl bg-amber-50 py-3 text-center text-xs font-bold text-amber-700">
+    Tu inscripción está pendiente de aprobación
+  </p>
+) : cuposDisponibles > 0 ? (
+  <BotonInscripcion tallerId={taller.id} />
+) : (
+  <button
+    disabled
+    className="w-full rounded-xl bg-gray-200 py-3 text-xs font-bold text-gray-500 cursor-not-allowed"
+  >
+    Sin cupos disponibles
+  </button>
+)}
 
               <button className="flex w-full items-center justify-center gap-2 rounded-xl border border-gray-200 bg-white py-3 text-xs font-bold text-slate-700 hover:bg-gray-50 transition-colors shadow-2xs">
                 📥 Descargar Programa (PDF)
