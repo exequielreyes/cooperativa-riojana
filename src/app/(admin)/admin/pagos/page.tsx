@@ -67,13 +67,22 @@ export default async function AdminPagosPage({
     }),
   ]);
 
+  // El link de exportar respeta los mismos filtros activos en pantalla.
+  const paramsExport = new URLSearchParams();
+  if (q) paramsExport.set("q", q);
+  if (estado) paramsExport.set("estado", estado);
+  if (metodo) paramsExport.set("metodo", metodo);
+  const hrefExportar = `/api/pagos/exportar?${paramsExport.toString()}`;
+
   return (
     <div>
       <div className="mb-6 flex items-center justify-between">
         <h1 className="text-2xl font-semibold text-primary-dark">Gestión de Pagos</h1>
         <div className="flex gap-2">
           <RegistrarPagoEfectivo />
-          <button className="btn-primary">Exportar Reporte</button>
+          <a href={hrefExportar} className="btn-primary">
+            Exportar Reporte
+          </a>
         </div>
       </div>
 
