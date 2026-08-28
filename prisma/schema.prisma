@@ -154,6 +154,26 @@ model ConfiguracionCooperativa {
   @@map("configuracion_cooperativa")
 }
 
+
+
+// Respuestas configurables del chatbot: si el mensaje del usuario contiene
+// alguna de las palabras clave, se le ofrece esta respuesta.
+model ChatbotRespuesta {
+  id            String   @id @default(cuid())
+  pregunta      String?
+  palabrasClave String   @db.Text // separadas por coma, ej: "horario, atencion, abren"
+  respuesta     String   @db.Text
+  link          String?  // link opcional al que se puede ir desde la respuesta (ej: /talleres)
+  linkTexto     String?  // texto del botón del link, ej: "Ver talleres disponibles →"
+  orden         Int      @default(0)
+  activa        Boolean  @default(true)
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  @@map("chatbot_respuestas")
+}
+
+
 model Cuota {
   id                String      @id @default(cuid())
   socioId           String

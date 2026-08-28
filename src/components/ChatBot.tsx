@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useMemo } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import ChatBot, { Flow, Settings, Styles } from 'react-chatbotify';
 import Link from 'next/link';
 import { MessageCircle } from 'lucide-react';
@@ -84,6 +84,21 @@ function normalizarTexto(texto: string): string {
     .trim();
 }
 
+interface RespuestaPersonalizada {
+  pregunta?: string;
+  palabras: string[];
+  respuesta: string;
+  link?: string | null;
+  linkTexto?: string | null;
+}
+
+
+let ultimaRespuestaPersonalizada = '';
+let ultimoLinkPersonalizado: string | null = null;
+let ultimoLinkTextoPersonalizado: string | null = null;
+
+
+
 function resolverRutaPorMensaje(params: { userInput: string }): string {
   const textoLimpio = normalizarTexto(params.userInput);
   const reglaCoincidente = REGLAS_RUTAS.find((regla) =>
@@ -104,6 +119,48 @@ export default function AppChatBot() {
   const estaLogueado = status === 'authenticated';
   const nombreUsuario = session?.user?.nombre ? ` ${session.user.nombre.split(' ')[0]}` : '';
 
+
+  const [respuestasAdmin, setRespuestasAdmin] = useState<RespuestaPersonalizada[]>([]);
+  const [cargandoRespuestas, setCargandoRespuestas] = useState(true);
+
+  useEffect(() => {
+
+    let montado = true;
+
+    async function cargarRespuestas() {
+      try {
+        const res = await fetch('/api/chatbot-respuestas');
+        if (res.ok) {
+          const datos: {
+            pregunta?: string | null;
+            palabrasClave: string;
+            respuesta: string;
+            link?: string | null;
+            linkTexto?: string | null;
+          }[] = await res.json();
+          if (montado) {
+            const parseadas = datos.map((d) => ({
+              pregunta: d.pregunta?.trim() || '',
+              palabras: d.palabrasClave.split(',').map((p) => p.trim()).filter(Boolean),
+              respuesta: d.respuesta,
+              link: d.link || null,
+              linkTexto: d.linkTexto || null,
+            }));
+            setRespuestasAdmin(parseadas);
+          }
+        }
+      } catch (e) {
+        console.error('Error cargando respuestas dinámicas:', e);
+      } finally {
+        if (montado) setCargandoRespuestas(false);
+      }
+    }
+    cargarRespuestas();
+    return () => {
+      montado = false;
+    };
+  }, []);
+
   // Menú dinámico: si está logueado, se excluye "¿Cómo me asocio?"
   const opcionesMenu = useMemo(() => {
     const base = [
@@ -112,9 +169,39 @@ export default function AppChatBot() {
       '¿Cómo me inscribo a un taller?',
       'Últimas noticias',
       'Quiero hablar con una persona'
-    ];
-    return estaLogueado ? base : ['¿Cómo me asocio?', ...base];
-  }, [estaLogueado]);
+    ];const preguntasDinamicas = respuestasAdmin
+      .map((r) => r.pregunta)
+      .filter((p): p is string => Boolean(p && p.trim().length > 0));
+    const menu = estaLogueado ? base : ['¿Cómo me asocio?', ...base];
+    return Array.from(new Set([...menu, ...preguntasDinamicas]));
+  }, [estaLogueado, respuestasAdmin]);
+
+
+
+const resolverRutaPorMensaje = (params: { userInput: string }): string => {
+    const textoLimpio = normalizarTexto(params.userInput);
+    // 1. Verificación por coincidencia de pregunta exacta o palabras clave dinámicas
+    const personalizada = respuestasAdmin.find((r) => {
+      const coincidePregunta = r.pregunta && normalizarTexto(r.pregunta) === textoLimpio;
+      const coincideClave = r.palabras.some((palabra) => textoLimpio.includes(normalizarTexto(palabra)));
+      return coincidePregunta || coincideClave;
+    });
+
+    if (personalizada) {
+      ultimaRespuestaPersonalizada = personalizada.respuesta;
+      ultimoLinkPersonalizado = personalizada.link || null;
+      ultimoLinkTextoPersonalizado = personalizada.linkTexto || null;
+      return 'respuesta_personalizada';
+    }
+
+    // 2. Verificación por reglas estáticas
+    const reglaCoincidente = REGLAS_RUTAS.find((regla) =>
+      regla.palabras.some((palabra) => textoLimpio.includes(normalizarTexto(palabra)))
+    );
+    return reglaCoincidente ? reglaCoincidente.destino : 'no_entendido';
+  };
+
+
 
   const evaluarSeleccionOpciones = (params: { userInput: string }): string => {
     switch (params.userInput) {
@@ -292,6 +379,27 @@ export default function AppChatBot() {
         if (params.userInput === 'Quiero hablar con una persona') return 'contacto';
         return resolverRutaPorMensaje(params);
       }
+    },
+    respuesta_personalizada: {
+      message: () => ultimaRespuestaPersonalizada,
+      component: () =>
+        ultimoLinkPersonalizado ? (
+          <div className="mt-2">
+            <Link
+              href={ultimoLinkPersonalizado}
+              className="inline-block rounded-md bg-[#0f3d3a] px-3 py-1.5 text-xs font-semibold text-white transition-colors hover:bg-[#16504c]"
+            >
+              {ultimoLinkTextoPersonalizado || 'Ver más →'}
+            </Link>
+          </div>
+        ) : undefined,
+      options: ['⬅ Volver al menú', 'Quiero hablar con una persona', 'Hacer otra consulta'],
+      path: (params: { userInput: string }) => {
+        if (params.userInput === '⬅ Volver al menú') return 'start';
+        if (params.userInput === 'Hacer otra consulta') return 'menu_opciones';
+        if (params.userInput === 'Quiero hablar con una persona') return 'contacto';
+        return resolverRutaPorMensaje(params);
+      }
     }
   };
 
@@ -311,7 +419,6 @@ export default function AppChatBot() {
     },
     chatHistory: {
       storageKey: 'cooperativa_meli_chat',
-      disabled: false
     },
     chatInput: {
       enabledPlaceholderText: 'Escribí tu consulta aquí...'
@@ -365,5 +472,15 @@ export default function AppChatBot() {
     }
   };
 
-  return <ChatBot key={estaLogueado ? 'logged-in' : 'guest'} flow={flow} settings={settings} styles={styles} />;
+  const listoParaRenderizar = status !== 'loading' && !cargandoRespuestas;
+  if (!listoParaRenderizar) return null;
+
+  return( 
+  <ChatBot
+      key={`bot-${estaLogueado ? session?.user?.email : 'guest'}`}
+      flow={flow}
+      settings={settings}
+      styles={styles}
+    />
+  );
 }
