@@ -14,6 +14,7 @@ enum RolUsuario {
   SOCIO
   SUPER_ADMIN
   EDITOR_CONTENIDOS
+  PROFESOR
 }
 
 enum EstadoSocio {
@@ -78,6 +79,7 @@ enum EstadoPublicacionRed {
 
 model Usuario {
   id            String     @id @default(cuid())
+  nombre        String?
   email         String     @unique
   passwordHash  String
   rol           RolUsuario @default(SOCIO)

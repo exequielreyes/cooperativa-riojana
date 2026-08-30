@@ -1,10 +1,18 @@
-const roles = [
-  { nombre: "Ricardo Martínez", rol: "Super Admin", ultimoAcceso: "Hoy, 09:12" },
-  { nombre: "Elena López", rol: "Editor Contenidos", ultimoAcceso: "Ayer, 18:45" },
-];
+import { getServerSession } from "next-auth";
+import { authOptions } from "@/lib/auth";
+import { GestorRoles } from "@/components/admin/GestorRoles";
+
+// const roles = [
+//   { nombre: "Ricardo Martínez", rol: "Super Admin", ultimoAcceso: "Hoy, 09:12" },
+//   { nombre: "Elena López", rol: "Editor Contenidos", ultimoAcceso: "Ayer, 18:45" },
+// ];
 
 // TODO: reemplazar por prisma.usuario.findMany({ where: { rol: { not: "SOCIO" } } })
-export default function AdminConfiguracionPage() {
+export default async function AdminConfiguracionPage() {
+const session = await getServerSession(authOptions);
+const esSuperAdmin = session?.user.rol === "SUPER_ADMIN";
+
+
   return (
     <div className="mx-auto max-w-3xl space-y-6">
       <h1 className="text-2xl font-semibold text-primary-dark">Configuración del Sistema</h1>
@@ -20,7 +28,7 @@ export default function AdminConfiguracionPage() {
         </div>
       </div>
 
-      <div className="card">
+      {/* <div className="card">
         <div className="mb-4 flex items-center justify-between">
           <p className="font-medium text-primary-dark">Gestión de Roles</p>
           <button className="btn-secondary text-sm">+ Invitar Admin</button>
@@ -45,7 +53,20 @@ export default function AdminConfiguracionPage() {
             ))}
           </tbody>
         </table>
-      </div>
+      </div> */}
+
+{esSuperAdmin && (
+        <div>
+          <p className="mb-3 text-sm font-medium text-gray-500">
+            Gestión de Roles — asigná el rol de Socio o Profesor a cada cuenta
+          </p>
+          <GestorRoles  />
+        </div>
+      )}
+
+
+
+
 
       <div className="card">
         <p className="mb-4 font-medium text-primary-dark">Alertas y Notificaciones</p>
