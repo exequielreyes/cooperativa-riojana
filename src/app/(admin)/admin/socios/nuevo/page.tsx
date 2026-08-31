@@ -7,7 +7,11 @@ export default function NuevoSocioPage() {
   const router = useRouter();
   const [enviando, setEnviando] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [credenciales, setCredenciales] = useState<{ email: string; passwordTemporal: string } | null>(null);
+  const [resultado, setResultado] = useState<
+    | { tipo: "activo"; email: string; passwordTemporal: string; emailEnviado: boolean }
+    | { tipo: "pendiente" }
+    | null
+  >(null);
 
   async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
@@ -15,6 +19,7 @@ export default function NuevoSocioPage() {
     setEnviando(true);
 
     const formData = new FormData(e.currentTarget);
+    const estado = formData.get("estado");
     const payload = {
       nombre: formData.get("nombre"),
       apellido: formData.get("apellido"),
@@ -23,7 +28,7 @@ export default function NuevoSocioPage() {
       telefono: formData.get("telefono"),
       region: formData.get("region"),
       tipoMiembro: formData.get("tipoMiembro"),
-      estado: formData.get("estado"),
+      estado,
     };
 
     const res = await fetch("/api/socios", {
@@ -41,19 +46,55 @@ export default function NuevoSocioPage() {
     }
 
     const data = await res.json();
-    setCredenciales({ email: data.usuario.email, passwordTemporal: data.passwordTemporal });
+
+    if (estado === "ACTIVO") {
+      setResultado({
+        tipo: "activo",
+        email: data.usuario.email,
+        passwordTemporal: data.passwordTemporal,
+        emailEnviado: Boolean(data.emailEnviado),
+      });
+    } else {
+      setResultado({ tipo: "pendiente" });
+    }
   }
 
-  if (credenciales) {
+  if (resultado?.tipo === "activo") {
     return (
       <div className="mx-auto max-w-lg">
         <div className="card">
           <p className="mb-2 font-medium text-status-success">Socio creado correctamente</p>
+          {resultado.emailEnviado ? (
+            <p className="mb-4 text-sm text-gray-600">
+              Le enviamos las credenciales por email a <strong>{resultado.email}</strong>.
+              Este es un resumen por si lo necesitás compartir de otra forma:
+            </p>
+          ) : (
+            <p className="mb-4 text-sm text-gray-600">
+              No se pudo enviar el email automático (revisá la configuración
+              de Resend). Compartile estas credenciales al socio manualmente:
+            </p>
+          )}
+          <p className="text-sm"><strong>Usuario:</strong> {resultado.email}</p>
+          <p className="mb-4 text-sm"><strong>Contraseña temporal:</strong> {resultado.passwordTemporal}</p>
+          <button className="btn-primary" onClick={() => router.push("/admin/socios")}>
+            Volver al listado
+          </button>
+        </div>
+      </div>
+    );
+  }
+
+  if (resultado?.tipo === "pendiente") {
+    return (
+      <div className="mx-auto max-w-lg">
+        <div className="card">
+          <p className="mb-2 font-medium text-primary-dark">Socio registrado como pendiente</p>
           <p className="mb-4 text-sm text-gray-600">
-            Compartile estas credenciales temporales (o implementá el envío por email):
+            Todavía no se generó ni se envió ninguna contraseña. Cuando lo
+            apruebes desde el listado (cambiándolo a "Activo"), el sistema va
+            a generar la contraseña y enviársela automáticamente por email.
           </p>
-          <p className="text-sm"><strong>Usuario:</strong> {credenciales.email}</p>
-          <p className="mb-4 text-sm"><strong>Contraseña temporal:</strong> {credenciales.passwordTemporal}</p>
           <button className="btn-primary" onClick={() => router.push("/admin/socios")}>
             Volver al listado
           </button>

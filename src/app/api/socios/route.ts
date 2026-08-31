@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/db";
 import bcrypt from "bcryptjs";
 import { z } from "zod";
+import { enviarEmailCredenciales } from "@/lib/email";
 
 const crearSocioSchema = z.object({
   nombre: z.string().min(1),
@@ -37,7 +38,11 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: "Ya existe un usuario con ese correo." }, { status: 409 });
   }
 
-  // Contraseña temporal: el socio la cambia en su primer ingreso (TODO: flujo de invitación por email)
+  // La contraseña se genera siempre porque el campo es obligatorio en la
+  // base, pero solo se revela (en la respuesta) y se envía por email cuando
+  // el socio queda ACTIVO. Si queda PENDIENTE, esta clave nunca se muestra
+  // ni se entrega a nadie — el socio recibe una contraseña nueva recién
+  // cuando el admin lo apruebe más adelante (ver PATCH /api/socios/[id]).
   const passwordTemporal = Math.random().toString(36).slice(-10);
   const passwordHash = await bcrypt.hash(passwordTemporal, 10);
 
@@ -69,8 +74,25 @@ export async function POST(request: NextRequest) {
     include: { socio: true },
   });
 
+  if (data.estado !== "ACTIVO") {
+    // Pendiente: no devolvemos la contraseña bajo ningún concepto.
+    return NextResponse.json({ usuario }, { status: 201 });
+  }
+
+  let emailEnviado = false;
+  try {
+    await enviarEmailCredenciales({
+      nombre: `${data.nombre} ${data.apellido}`,
+      email: data.email,
+      passwordTemporal,
+    });
+    emailEnviado = true;
+  } catch (error) {
+    console.error("No se pudo enviar el email de credenciales:", error);
+  }
+
   return NextResponse.json(
-    { usuario, passwordTemporal },
+    { usuario, passwordTemporal, emailEnviado },
     { status: 201 }
   );
 }

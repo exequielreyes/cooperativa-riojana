@@ -20,6 +20,11 @@ export function EditarSocioForm({ socio }: { socio: SocioEditable }) {
   const router = useRouter();
   const [enviando, setEnviando] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [credenciales, setCredenciales] = useState<{
+    email: string;
+    passwordTemporal: string;
+    emailEnviado: boolean;
+  } | null>(null);
 
   async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
@@ -50,8 +55,53 @@ export function EditarSocioForm({ socio }: { socio: SocioEditable }) {
       return;
     }
 
+    const data = await res.json();
+
+    // Si esta edición aprobó a un socio pendiente, el PATCH generó una
+    // contraseña nueva — la mostramos como respaldo por si el email falló.
+    if (data.passwordTemporal) {
+      setCredenciales({
+        email: socio.email,
+        passwordTemporal: data.passwordTemporal,
+        emailEnviado: Boolean(data.emailEnviado),
+      });
+      return;
+    }
+
     router.push("/admin/socios");
     router.refresh();
+  }
+
+  if (credenciales) {
+    return (
+      <div className="mx-auto max-w-lg">
+        <div className="card">
+          <p className="mb-2 font-medium text-status-success">Socio aprobado correctamente</p>
+          {credenciales.emailEnviado ? (
+            <p className="mb-4 text-sm text-gray-600">
+              Le enviamos las credenciales por email a <strong>{credenciales.email}</strong>.
+              Este es un resumen por si lo necesitás compartir de otra forma:
+            </p>
+          ) : (
+            <p className="mb-4 text-sm text-gray-600">
+              No se pudo enviar el email automático (revisá la configuración
+              de Resend). Compartile estas credenciales al socio manualmente:
+            </p>
+          )}
+          <p className="text-sm"><strong>Usuario:</strong> {credenciales.email}</p>
+          <p className="mb-4 text-sm"><strong>Contraseña temporal:</strong> {credenciales.passwordTemporal}</p>
+          <button
+            className="btn-primary"
+            onClick={() => {
+              router.push("/admin/socios");
+              router.refresh();
+            }}
+          >
+            Volver al listado
+          </button>
+        </div>
+      </div>
+    );
   }
 
   return (

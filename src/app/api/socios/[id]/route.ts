@@ -4,6 +4,7 @@ import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/db";
 import bcrypt from "bcryptjs";
 import { z } from "zod";
+import { enviarEmailCredenciales } from "@/lib/email";
 
 const editarSocioSchema = z.object({
   nombre: z.string().min(1).optional(),
@@ -44,6 +45,7 @@ export async function PATCH(request: NextRequest, { params }: { params: { id: st
   // ingresar (a propósito).
   const aprobando = socioActual.estado === "PENDIENTE" && parsed.data.estado === "ACTIVO";
   let passwordTemporal: string | undefined;
+  let emailEnviado = false;
 
   if (aprobando) {
     passwordTemporal = Math.random().toString(36).slice(-10);
@@ -52,6 +54,20 @@ export async function PATCH(request: NextRequest, { params }: { params: { id: st
       where: { id: socioActual.usuarioId },
       data: { passwordHash },
     });
+
+    // Si el email falla (Resend no configurado, casilla inválida, etc.) no
+    // frenamos la aprobación: el admin igual ve la contraseña en pantalla
+    // y puede compartirla manualmente.
+    try {
+      await enviarEmailCredenciales({
+        nombre: `${socioActual.nombre} ${socioActual.apellido}`,
+        email: socioActual.email,
+        passwordTemporal,
+      });
+      emailEnviado = true;
+    } catch (error) {
+      console.error("No se pudo enviar el email de credenciales:", error);
+    }
   }
 
   // Dar de baja desactiva también el acceso a la cuenta; reactivar lo restaura.
@@ -66,5 +82,5 @@ export async function PATCH(request: NextRequest, { params }: { params: { id: st
     data: parsed.data,
   });
 
-  return NextResponse.json({ socio, passwordTemporal });
+  return NextResponse.json({ socio, passwordTemporal, emailEnviado });
 }
