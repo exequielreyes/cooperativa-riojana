@@ -56,7 +56,11 @@ export function AccionesSocio({
   const [abierto, setAbierto] = useState(false);
   const [cargando, setCargando] = useState(false);
   const [confirmando, setConfirmando] = useState<AccionConfirmable | null>(null);
-  const [credenciales, setCredenciales] = useState<{ email: string; passwordTemporal: string } | null>(null);
+  const [credenciales, setCredenciales] = useState<{
+    email: string;
+    passwordTemporal: string;
+    emailEnviado: boolean;
+  } | null>(null);
   const ref = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -80,7 +84,11 @@ export function AccionesSocio({
     if (res.ok) {
       const data = await res.json();
       if (data.passwordTemporal) {
-        setCredenciales({ email, passwordTemporal: data.passwordTemporal });
+        setCredenciales({
+          email,
+          passwordTemporal: data.passwordTemporal,
+          emailEnviado: Boolean(data.emailEnviado),
+        });
       }
     }
     router.refresh();
@@ -162,9 +170,17 @@ export function AccionesSocio({
         >
           <div className="card w-full max-w-sm" onClick={(e) => e.stopPropagation()}>
             <p className="mb-2 font-medium text-status-success">Solicitud aprobada</p>
-            <p className="mb-4 text-sm text-gray-600">
-              Compartile estas credenciales temporales al socio (o implementá el envío por email):
-            </p>
+            {credenciales.emailEnviado ? (
+              <p className="mb-4 text-sm text-gray-600">
+                Le enviamos las credenciales por email a <strong>{credenciales.email}</strong>.
+                Este es un resumen por si lo necesitás compartir de otra forma:
+              </p>
+            ) : (
+              <p className="mb-4 text-sm text-gray-600">
+                No se pudo enviar el email automático (revisá la configuración
+                de Resend). Compartile estas credenciales al socio manualmente:
+              </p>
+            )}
             <p className="text-sm">
               <strong>Usuario:</strong> {credenciales.email}
             </p>
