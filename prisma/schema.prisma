@@ -110,6 +110,7 @@ model Socio {
   idCooperativa   String      @unique // ej: CR-2024-0081
   tipoMiembro     TipoMiembro @default(PRODUCTOR)
   estado          EstadoSocio @default(PENDIENTE)
+  motivoBaja      String?
   fotoUrl         String?
   moodleUserId    Int?        // id numerico del usuario en Moodle (cache, evita recrearlo)
 

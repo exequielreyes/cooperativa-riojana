@@ -34,7 +34,6 @@ export default async function MisTalleresPage() {
         },
       },
       orderBy: { fechaInscripcion: "desc" },
-      orderBy: { fechaInscripcion: "desc" },
     }),
   ]);
 

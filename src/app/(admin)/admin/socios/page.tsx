@@ -28,6 +28,19 @@ export default async function AdminSociosPage({
   const estado = searchParams.estado ?? "";
   const page = Math.max(1, parseInt(searchParams.page ?? "1", 10) || 1);
 
+  let whereEstado: any = undefined;
+  if (estado === "INACTIVO") {
+    whereEstado = { estado: "INACTIVO" };
+  } else if (estado === "INACTIVO_FALLECIMIENTO") {
+    whereEstado = { estado: "INACTIVO", motivoBaja: "FALLECIMIENTO" };
+  } else if (estado === "INACTIVO_FALTA_PAGO") {
+    whereEstado = { estado: "INACTIVO", motivoBaja: "FALTA_PAGO" };
+  } else if (estado === "INACTIVO_BAJA") {
+    whereEstado = { estado: "INACTIVO", motivoBaja: "BAJA_VOLUNTARIA" };
+  } else if (estado) {
+    whereEstado = { estado: estado as "ACTIVO" | "PENDIENTE" };
+  }
+
   const where = {
     ...(q && {
       OR: [
@@ -38,7 +51,7 @@ export default async function AdminSociosPage({
       ],
     }),
     ...(region && { region }),
-    ...(estado && { estado: estado as "ACTIVO" | "PENDIENTE" | "INACTIVO" }),
+    ...(whereEstado && whereEstado),
   };
 
   const [socios, total, regiones] = await Promise.all([
@@ -107,7 +120,15 @@ export default async function AdminSociosPage({
                 <td className="px-6 py-3">{socio.idCooperativa}</td>
                 <td className="px-6 py-3">{socio.region ?? "—"}</td>
                 <td className="px-6 py-3">
-                  <StatusBadge label={estadoLabel[socio.estado]} tone={estadoTone[socio.estado]} />
+                  <StatusBadge 
+                    label={
+                      socio.estado === "INACTIVO" && socio.motivoBaja === "FALLECIMIENTO" ? "Inactivo (Fallecido)" :
+                      socio.estado === "INACTIVO" && socio.motivoBaja === "FALTA_PAGO" ? "Inactivo (Falta de Pago)" :
+                      socio.estado === "INACTIVO" && socio.motivoBaja === "BAJA_VOLUNTARIA" ? "Inactivo (Voluntaria)" :
+                      estadoLabel[socio.estado]
+                    } 
+                    tone={estadoTone[socio.estado]} 
+                  />
                 </td>
                 <td className="px-6 py-3">
                   <AccionesSocio socioId={socio.id} estado={socio.estado} email={socio.email} nombre={`${socio.nombre} ${socio.apellido}`} />

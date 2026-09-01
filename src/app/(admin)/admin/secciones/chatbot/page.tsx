@@ -1,5 +1,5 @@
 import { GestorChatbot } from "@/components/admin/GestorChatBot";
-
+import { prisma } from "@/lib/db";
 export default async function ChatbotAdminPage() {
   const respuestas = await prisma.chatbotRespuesta.findMany({ orderBy: { orden: "asc" } });
   return (
