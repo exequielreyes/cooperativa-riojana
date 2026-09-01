@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { signOut } from "next-auth/react";
+import { PasswordInput } from "@/components/ui/PasswordInput";
 
 export function CambiarPasswordForm() {
   const [mostrarForm, setMostrarForm] = useState(false);
@@ -56,9 +57,9 @@ export function CambiarPasswordForm() {
         </button>
       ) : (
         <form className="space-y-3" onSubmit={handleSubmit}>
-          <input className="input" type="password" name="passwordActual" placeholder="Contraseña actual" required />
-          <input className="input" type="password" name="passwordNueva" placeholder="Contraseña nueva (mín. 8 caracteres)" required minLength={8} />
-          <input className="input" type="password" name="confirmar" placeholder="Confirmar contraseña nueva" required />
+          <PasswordInput name="passwordActual" placeholder="Contraseña actual" required />
+          <PasswordInput name="passwordNueva" placeholder="Contraseña nueva (mín. 8 caracteres)" required minLength={8} />
+          <PasswordInput name="confirmar" placeholder="Confirmar contraseña nueva" required />
 
           {mensaje && (
             <p className={`text-sm ${mensaje.tipo === "ok" ? "text-status-success" : "text-status-danger"}`}>

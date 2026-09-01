@@ -122,3 +122,60 @@ export async function enviarEmailCredenciales(datos: {
     throw new Error(`Resend error: ${error.message}`);
   }
 }
+
+/**
+ * Envía el email con el enlace para restablecer la contraseña, cuando el
+ * usuario pide "¿Olvidaste tu contraseña?" en el login.
+ */
+export async function enviarEmailRecuperacion(datos: {
+  nombre: string;
+  email: string;
+  urlReseteo: string;
+}) {
+  const apiKey = process.env.RESEND_API_KEY;
+  const emailFrom = process.env.CONTACTO_EMAIL_FROM ?? "onboarding@resend.dev";
+
+  if (!apiKey) {
+    throw new Error(
+      "RESEND_API_KEY no está configurada. Agregala en tu .env (ver INTEGRACION-EMAIL.md)."
+    );
+  }
+
+  const resend = new Resend(apiKey);
+  const { nombre, email, urlReseteo } = datos;
+
+  const { error } = await resend.emails.send({
+    from: `Cooperativa Riojana <${emailFrom}>`,
+    to: email,
+    subject: "Recuperá tu contraseña — Cooperativa Riojana",
+    html: `
+      <div style="font-family: Arial, sans-serif; max-width: 480px; color: #1a1f1e;">
+        <h2 style="color: #0e3b37;">Recuperación de contraseña</h2>
+        <p>Hola ${escaparHtml(nombre)},</p>
+        <p>
+          Recibimos una solicitud para restablecer tu contraseña. Si fuiste
+          vos, hacé clic en el siguiente botón (válido por 1 hora):
+        </p>
+        <a
+          href="${urlReseteo}"
+          style="display: inline-block; margin: 16px 0; background: #0e3b37; color: #ffffff; text-decoration: none; padding: 10px 20px; border-radius: 8px; font-weight: 600;"
+        >
+          Restablecer mi contraseña
+        </a>
+        <p style="font-size: 13px; color: #6b7674;">
+          Si el botón no funciona, copiá y pegá este enlace en tu navegador:<br />
+          <span style="word-break: break-all;">${urlReseteo}</span>
+        </p>
+        <hr style="border: none; border-top: 1px solid #e8e5df; margin: 24px 0 16px;" />
+        <p style="font-size: 12px; color: #6b7674;">
+          Si no pediste este cambio, podés ignorar este email — tu
+          contraseña actual sigue siendo válida.
+        </p>
+      </div>
+    `,
+  });
+
+  if (error) {
+    throw new Error(`Resend error: ${error.message}`);
+  }
+}

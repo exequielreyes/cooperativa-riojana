@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { signIn, getSession } from "next-auth/react";
+import { PasswordInput } from "@/components/ui/PasswordInput";
 
 export default function LoginPage() {
   const router = useRouter();
@@ -49,7 +50,12 @@ export default function LoginPage() {
 
         <form className="space-y-4" onSubmit={handleSubmit}>
           <input className="input" placeholder="Correo electrónico o Usuario" name="email" type="email" required />
-          <input className="input" type="password" placeholder="Contraseña" name="password" required />
+          <PasswordInput placeholder="Contraseña" name="password" required />
+          <div className="text-right">
+            <Link href="/olvide-contrasena" className="text-xs text-gray-500 hover:text-primary-dark hover:underline">
+              ¿Olvidaste tu contraseña?
+            </Link>
+          </div>
           {error && <p className="text-xs text-status-danger">{error}</p>}
           <button type="submit" className="btn-primary w-full" disabled={cargando}>
             {cargando ? "Ingresando..." : "Acceder al Portal"}
