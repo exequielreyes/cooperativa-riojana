@@ -90,6 +90,7 @@ model Usuario {
   socio         Socio?
   noticias      Noticia[]  @relation("AutorNoticia")
   pagosValidados Pago[]    @relation("ValidadorPago")
+  resetTokens   PasswordResetToken[]
 
   @@map("usuarios")
 }
@@ -383,4 +384,19 @@ model ContenidoNosotros {
   updatedAt DateTime @updatedAt
 
   @@map("contenido_nosotros")
+}
+// Tokens de un solo uso para el flujo de "¿Olvidaste tu contraseña?".
+// Guardamos el hash del token (no el token en texto plano) por seguridad:
+// si alguien accediera a la base, no podría usarlos para resetear cuentas.
+model PasswordResetToken {
+  id         String    @id @default(cuid())
+  usuarioId  String
+  usuario    Usuario   @relation(fields: [usuarioId], references: [id], onDelete: Cascade)
+  tokenHash  String    @unique
+  expiresAt  DateTime
+  usedAt     DateTime?
+  createdAt  DateTime  @default(now())
+
+  @@map("password_reset_tokens")
+  @@index([usuarioId])
 }
