@@ -14,6 +14,7 @@ const editarSocioSchema = z.object({
   region: z.string().optional(),
   tipoMiembro: z.enum(["PRODUCTOR", "ADHERENTE", "HONORARIO"]).optional(),
   estado: z.enum(["ACTIVO", "PENDIENTE", "INACTIVO"]).optional(),
+  motivoBaja: z.string().nullable().optional(),
 });
 
 export async function GET(_req: NextRequest, { params }: { params: { id: string } }) {

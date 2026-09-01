@@ -71,15 +71,26 @@ export function AccionesSocio({
     return () => document.removeEventListener("mousedown", handleClick);
   }, []);
 
+  const [motivoBaja, setMotivoBaja] = useState<string>("BAJA_VOLUNTARIA");
+
   async function cambiarEstado(nuevoEstado: "ACTIVO" | "INACTIVO") {
     setCargando(true);
+    const body: any = { estado: nuevoEstado };
+    if (nuevoEstado === "INACTIVO" && confirmando === "BAJA") {
+      body.motivoBaja = motivoBaja;
+    }
+    if (nuevoEstado === "ACTIVO") {
+      body.motivoBaja = null;
+    }
+    
     const res = await fetch(`/api/socios/${socioId}`, {
       method: "PATCH",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ estado: nuevoEstado }),
+      body: JSON.stringify(body),
     });
     setCargando(false);
     setConfirmando(null);
+    setMotivoBaja("BAJA_VOLUNTARIA"); // reset
 
     if (res.ok) {
       const data = await res.json();
@@ -160,7 +171,25 @@ export function AccionesSocio({
           loading={cargando}
           onConfirm={() => cambiarEstado(CONFIRM_CONFIG[confirmando].nuevoEstado)}
           onCancel={() => setConfirmando(null)}
-        />
+        >
+          {confirmando === "BAJA" && (
+            <div className="mt-4">
+              <label htmlFor="motivoBaja" className="block text-sm font-medium text-gray-700">
+                Motivo de la baja
+              </label>
+              <select
+                id="motivoBaja"
+                value={motivoBaja}
+                onChange={(e) => setMotivoBaja(e.target.value)}
+                className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-primary focus:ring-primary sm:text-sm p-2 border"
+              >
+                <option value="BAJA_VOLUNTARIA">Baja (voluntaria/estándar)</option>
+                <option value="FALLECIMIENTO">Fallecimiento</option>
+                <option value="FALTA_PAGO">Falta de pagos</option>
+              </select>
+            </div>
+          )}
+        </ConfirmModal>
       )}
 
       {credenciales && (

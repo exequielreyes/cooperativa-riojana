@@ -14,11 +14,13 @@ interface SocioEditable {
   estado: string;
   idCooperativa: string;
   email: string;
+  motivoBaja?: string | null;
 }
 
 export function EditarSocioForm({ socio }: { socio: SocioEditable }) {
   const router = useRouter();
   const [enviando, setEnviando] = useState(false);
+  const [estadoActual, setEstadoActual] = useState(socio.estado);
   const [error, setError] = useState<string | null>(null);
   const [credenciales, setCredenciales] = useState<{
     email: string;
@@ -40,6 +42,7 @@ export function EditarSocioForm({ socio }: { socio: SocioEditable }) {
       region: formData.get("region"),
       tipoMiembro: formData.get("tipoMiembro"),
       estado: formData.get("estado"),
+      motivoBaja: formData.get("estado") === "INACTIVO" ? formData.get("motivoBaja") : null,
     };
 
     const res = await fetch(`/api/socios/${socio.id}`, {
@@ -139,12 +142,22 @@ export function EditarSocioForm({ socio }: { socio: SocioEditable }) {
             <option value="ADHERENTE">Adherente</option>
             <option value="HONORARIO">Honorario</option>
           </select>
-          <select className="input" name="estado" defaultValue={socio.estado}>
+          <select className="input" name="estado" value={estadoActual} onChange={(e) => setEstadoActual(e.target.value)}>
             <option value="ACTIVO">Activo</option>
             <option value="PENDIENTE">Pendiente</option>
             <option value="INACTIVO">Inactivo</option>
           </select>
         </div>
+        {estadoActual === "INACTIVO" && (
+          <div className="mt-4">
+            <label className="mb-2 block text-sm font-medium text-primary-dark">Motivo de Baja</label>
+            <select className="input" name="motivoBaja" defaultValue={socio.motivoBaja || "BAJA_VOLUNTARIA"}>
+              <option value="BAJA_VOLUNTARIA">Baja (voluntaria/estándar)</option>
+              <option value="FALLECIMIENTO">Fallecimiento</option>
+              <option value="FALTA_PAGO">Falta de pagos</option>
+            </select>
+          </div>
+        )}
       </div>
 
       {error && <p className="text-sm text-status-danger">{error}</p>}

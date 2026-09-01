@@ -48,7 +48,15 @@ export default async function PerfilSocioAdminPage({ params }: { params: { id: s
           </div>
         </div>
         <div className="flex items-center gap-3">
-          <StatusBadge label={estadoLabel[socio.estado]} tone={estadoTone[socio.estado]} />
+          <StatusBadge 
+            label={
+              socio.estado === "INACTIVO" && socio.motivoBaja === "FALLECIMIENTO" ? "Inactivo (Fallecido)" :
+              socio.estado === "INACTIVO" && socio.motivoBaja === "FALTA_PAGO" ? "Inactivo (Falta de Pago)" :
+              socio.estado === "INACTIVO" && socio.motivoBaja === "BAJA_VOLUNTARIA" ? "Inactivo (Voluntaria)" :
+              estadoLabel[socio.estado]
+            } 
+            tone={estadoTone[socio.estado]} 
+          />
           <Link href={`/admin/socios/${socio.id}/editar`} className="btn-secondary">
             Editar
           </Link>

@@ -70,28 +70,60 @@ export function FiltrosSocios({ regiones }: { regiones: string[] }) {
           />
         )}
       </div>
-      <select
-        className="input w-auto"
-        value={region}
-        onChange={(e) => onRegionChange(e.target.value)}
-      >
-        <option value="">Todas las Regiones</option>
-        {regiones.map((r) => (
-          <option key={r} value={r}>
-            {r}
-          </option>
-        ))}
-      </select>
-      <select
-        className="input w-auto"
-        value={estado}
-        onChange={(e) => onEstadoChange(e.target.value)}
-      >
-        <option value="">Todos los Estados</option>
-        <option value="ACTIVO">Activo</option>
-        <option value="PENDIENTE">Pendiente</option>
-        <option value="INACTIVO">Inactivo</option>
-      </select>
+      <div className="flex gap-2">
+        <select
+          className="input w-auto"
+          value={region}
+          onChange={(e) => onRegionChange(e.target.value)}
+        >
+          <option value="">Todas las Regiones</option>
+          {regiones.map((r) => (
+            <option key={r} value={r}>
+              {r}
+            </option>
+          ))}
+        </select>
+        <select
+          className="input w-auto"
+          value={estado}
+          onChange={(e) => onEstadoChange(e.target.value)}
+        >
+          <option value="">Todos los Estados</option>
+          <option value="ACTIVO">Activo</option>
+          <option value="PENDIENTE">Pendiente</option>
+          <option value="INACTIVO">Inactivo (Todos)</option>
+        </select>
+      </div>
+
+      <div className="flex w-full gap-2 mt-2">
+        <span className="text-sm text-gray-500 py-1.5">Filtros rápidos de bajas:</span>
+        <button
+          onClick={() => onEstadoChange("INACTIVO_FALLECIMIENTO")}
+          className={`px-3 py-1 text-sm rounded-full border ${estado === "INACTIVO_FALLECIMIENTO" ? "bg-red-50 text-red-700 border-red-200" : "bg-white text-gray-600 border-gray-200 hover:bg-gray-50"}`}
+        >
+          Fallecidos
+        </button>
+        <button
+          onClick={() => onEstadoChange("INACTIVO_FALTA_PAGO")}
+          className={`px-3 py-1 text-sm rounded-full border ${estado === "INACTIVO_FALTA_PAGO" ? "bg-orange-50 text-orange-700 border-orange-200" : "bg-white text-gray-600 border-gray-200 hover:bg-gray-50"}`}
+        >
+          Falta de Pagos
+        </button>
+        <button
+          onClick={() => onEstadoChange("INACTIVO_BAJA")}
+          className={`px-3 py-1 text-sm rounded-full border ${estado === "INACTIVO_BAJA" ? "bg-gray-100 text-gray-800 border-gray-300" : "bg-white text-gray-600 border-gray-200 hover:bg-gray-50"}`}
+        >
+          Baja Voluntaria
+        </button>
+        {["INACTIVO_FALLECIMIENTO", "INACTIVO_FALTA_PAGO", "INACTIVO_BAJA"].includes(estado) && (
+          <button
+            onClick={() => onEstadoChange("")}
+            className="px-3 py-1 text-sm text-gray-400 hover:text-gray-600"
+          >
+            Limpiar
+          </button>
+        )}
+      </div>
     </div>
   );
 }
