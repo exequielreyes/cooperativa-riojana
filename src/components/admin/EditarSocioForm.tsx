@@ -91,7 +91,6 @@ export function EditarSocioForm({ socio }: { socio: SocioEditable }) {
           </select>
           <select className="input" name="estado" defaultValue={socio.estado}>
             <option value="ACTIVO">Activo</option>
-            <option value="PENDIENTE">Pendiente</option>
             <option value="INACTIVO">Inactivo</option>
           </select>
         </div>
