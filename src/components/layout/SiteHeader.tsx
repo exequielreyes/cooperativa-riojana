@@ -8,6 +8,8 @@ import Image from "next/image";
 
 
 
+import { CampanaNotificaciones } from "./CampanaNotificaciones";
+
 const navLinks = [
   { href: "/", label: "Inicio" },
   { href: "/noticias", label: "Noticias" },
@@ -129,7 +131,9 @@ export function SiteHeader() {
         {status === "loading" ? (
           <div className="h-9 w-24" />
         ) : session ? (
-          <div className="relative" ref={menuRef}>
+          <div className="flex items-center gap-2">
+            {esSocio && <CampanaNotificaciones />}
+            <div className="relative" ref={menuRef}>
             <button
               onClick={() => setAbierto((v) => !v)}
               className="flex items-center gap-2 rounded-lg px-2 py-1.5 text-sm hover:bg-surface-muted"
@@ -192,6 +196,7 @@ export function SiteHeader() {
                 </div>
               </div>
             )}
+          </div>
           </div>
         ) : (
           <Link href="/login" className="btn-primary">
