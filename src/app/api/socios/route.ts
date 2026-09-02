@@ -38,6 +38,12 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: "Ya existe un usuario con ese correo." }, { status: 409 });
   }
 
+  const socioExistente = await prisma.socio.findUnique({ where: { dni: data.dni } });
+  if (socioExistente) {
+    return NextResponse.json({ error: "Ya existe un socio registrado con ese DNI." }, { status: 409 });
+  }
+
+
   // La contraseña se genera siempre porque el campo es obligatorio en la
   // base, pero solo se revela (en la respuesta) y se envía por email cuando
   // el socio queda ACTIVO. Si queda PENDIENTE, esta clave nunca se muestra
