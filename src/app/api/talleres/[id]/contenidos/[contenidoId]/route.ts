@@ -12,16 +12,25 @@ export async function DELETE(
   { params }: { params: { id: string; contenidoId: string } }
 ) {
   const session = await getServerSession(authOptions);
-  if (!esEditor(session?.user.rol)) {
+  if (!session) {
     return NextResponse.json({ error: "No autorizado" }, { status: 403 });
   }
 
   const contenido = await prisma.contenidoTaller.findUnique({
     where: { id: params.contenidoId },
+    include: { taller: true },
   });
 
   if (!contenido || contenido.tallerId !== params.id) {
     return NextResponse.json({ error: "Contenido no encontrado" }, { status: 404 });
+  }
+
+  const puedeGestionar =
+    esEditor(session.user.rol) ||
+    (session.user.rol === "PROFESOR" && contenido.taller.profesorId === session.user.id);
+
+  if (!puedeGestionar) {
+    return NextResponse.json({ error: "No autorizado" }, { status: 403 });
   }
 
   await prisma.contenidoTaller.delete({ where: { id: params.contenidoId } });
