@@ -8,6 +8,7 @@ const editarPerfilSchema = z.object({
   nombre: z.string().min(1),
   apellido: z.string().min(1),
   telefono: z.string().optional(),
+  fechaNacimiento: z.string().nullable().optional(),
 });
 
 export async function PATCH(request: NextRequest) {
@@ -22,9 +23,14 @@ export async function PATCH(request: NextRequest) {
     return NextResponse.json({ error: parsed.error.flatten() }, { status: 400 });
   }
 
+  const dataToUpdate: any = { ...parsed.data };
+  if (dataToUpdate.fechaNacimiento) {
+    dataToUpdate.fechaNacimiento = new Date(dataToUpdate.fechaNacimiento);
+  }
+
   const socio = await prisma.socio.update({
     where: { id: session.user.socioId },
-    data: parsed.data,
+    data: dataToUpdate,
   });
 
   return NextResponse.json(socio);

@@ -15,6 +15,7 @@ interface SocioEditable {
   idCooperativa: string;
   email: string;
   motivoBaja?: string | null;
+  fechaNacimiento: string;
 }
 
 export function EditarSocioForm({ socio }: { socio: SocioEditable }) {
@@ -43,6 +44,7 @@ export function EditarSocioForm({ socio }: { socio: SocioEditable }) {
       tipoMiembro: formData.get("tipoMiembro"),
       estado: formData.get("estado"),
       motivoBaja: formData.get("estado") === "INACTIVO" ? formData.get("motivoBaja") : null,
+      fechaNacimiento: formData.get("fechaNacimiento") ? new Date(formData.get("fechaNacimiento") as string).toISOString() : null,
     };
 
     const res = await fetch(`/api/socios/${socio.id}`, {
@@ -116,6 +118,7 @@ export function EditarSocioForm({ socio }: { socio: SocioEditable }) {
           <input className="input" name="apellido" defaultValue={socio.apellido} placeholder="Apellidos" required />
           <input className="input bg-surface-muted" value={socio.email} disabled />
           <input className="input bg-surface-muted" value={socio.idCooperativa} disabled />
+          <input className="input" type="date" name="fechaNacimiento" defaultValue={socio.fechaNacimiento} placeholder="Fecha de Nacimiento" />
         </div>
       </div>
 

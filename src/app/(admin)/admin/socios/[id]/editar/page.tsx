@@ -21,6 +21,7 @@ export default async function EditarSocioPage({ params }: { params: { id: string
           estado: socio.estado,
           idCooperativa: socio.idCooperativa,
           email: socio.email,
+          fechaNacimiento: socio.fechaNacimiento ? socio.fechaNacimiento.toISOString().split("T")[0] : "",
         }}
       />
     </div>
