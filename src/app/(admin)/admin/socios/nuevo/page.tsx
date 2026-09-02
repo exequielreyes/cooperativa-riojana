@@ -33,6 +33,7 @@ export default function NuevoSocioPage() {
       nombre: formData.get("nombre"),
       apellido: formData.get("apellido"),
       dni: formData.get("dni"),
+      fechaNacimiento: formData.get("fechaNacimiento") ? new Date(formData.get("fechaNacimiento") as string).toISOString() : null,
       email: formData.get("email"),
       telefono: formData.get("telefono"),
       region: formData.get("region"),
@@ -137,6 +138,7 @@ export default function NuevoSocioPage() {
             <input className="input" name="nombre" placeholder="Nombre" required />
             <input className="input" name="apellido" placeholder="Apellidos" required />
             <input className="input" name="dni" placeholder="DNI / NIE" required />
+            <input className="input" type="date" name="fechaNacimiento" placeholder="Fecha de Nacimiento" required />
           </div>
         </div>
 

@@ -26,6 +26,7 @@ export default function AsociarmePage() {
       nombre: formData.get("nombre"),
       apellido: formData.get("apellido"),
       dni: formData.get("dni"),
+      fechaNacimiento: formData.get("fechaNacimiento") ? new Date(formData.get("fechaNacimiento") as string).toISOString() : null,
       email: formData.get("email"),
       telefono: formData.get("telefono"),
       region: formData.get("region"),
@@ -93,7 +94,10 @@ export default function AsociarmePage() {
             <input className="input" placeholder="Nombre" name="nombre" required />
             <input className="input" placeholder="Apellidos" name="apellido" required />
           </div>
-          <input className="input mt-4" placeholder="DNI / NIE" name="dni" required />
+          <div className="mt-4 grid gap-4 sm:grid-cols-2">
+            <input className="input" placeholder="DNI / NIE" name="dni" required />
+            <input className="input" type="date" placeholder="Fecha de Nacimiento" name="fechaNacimiento" required />
+          </div>
         </div>
 
         <div className="card">
