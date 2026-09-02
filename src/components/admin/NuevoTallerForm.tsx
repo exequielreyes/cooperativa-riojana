@@ -7,6 +7,7 @@ export function NuevoTallerForm() {
   const router = useRouter();
   const [enviando, setEnviando] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [esPago, setEsPago] = useState(false);
 
   async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
@@ -27,6 +28,9 @@ export function NuevoTallerForm() {
       cuposTotales: formData.get("cuposTotales"),
       requisitos: formData.get("requisitos"),
       materialUrl: formData.get("materialUrl"),
+      esPago,
+      precio: esPago ? formData.get("precio") : null,
+      descuento: esPago ? formData.get("descuento") : null,
     };
 
     const res = await fetch("/api/talleres", {
@@ -90,6 +94,45 @@ export function NuevoTallerForm() {
         <p className="mt-2 text-xs text-gray-400">
           Los socios inscriptos van a poder acceder a este link desde "Mis Talleres".
         </p>
+      </div>
+
+      <div className="card">
+        <div className="flex items-center justify-between mb-2">
+          <p className="font-medium text-primary-dark">Costo de Inscripción</p>
+          <label className="flex items-center gap-2 text-sm text-gray-600 cursor-pointer">
+            <input 
+              type="checkbox" 
+              className="rounded border-gray-300 text-primary focus:ring-primary"
+              checked={esPago}
+              onChange={(e) => setEsPago(e.target.checked)}
+            />
+            Es un taller pago
+          </label>
+        </div>
+        
+        {!esPago ? (
+          <p className="text-sm text-gray-400">El taller es gratuito para los socios.</p>
+        ) : (
+          <div className="mt-4 flex gap-4">
+            <input 
+              className="input flex-1" 
+              type="number" 
+              min="0" 
+              step="0.01" 
+              name="precio" 
+              placeholder="Precio ($)" 
+              required={esPago} 
+            />
+            <input 
+              className="input flex-1" 
+              type="number" 
+              min="0" 
+              max="100" 
+              name="descuento" 
+              placeholder="Descuento (%) — opcional" 
+            />
+          </div>
+        )}
       </div>
 
       {error && <p className="text-sm text-status-danger">{error}</p>}

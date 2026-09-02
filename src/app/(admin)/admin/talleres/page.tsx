@@ -64,6 +64,7 @@ export default async function AdminTalleresPage() {
                 <th className="py-2 font-normal">Socio</th>
                 <th className="py-2 font-normal">Taller</th>
                 <th className="py-2 font-normal">Fecha de inscripción</th>
+                <th className="py-2 font-normal">Comprobante</th>
                 <th className="py-2 font-normal">Acciones</th>
               </tr>
             </thead>
@@ -76,6 +77,20 @@ export default async function AdminTalleresPage() {
                   </td>
                   <td className="py-2.5">{inscripcion.taller.titulo}</td>
                   <td className="py-2.5">{formatDate(inscripcion.fechaInscripcion)}</td>
+                  <td className="py-2.5">
+                    {inscripcion.comprobanteUrl ? (
+                      <a 
+                        href={inscripcion.comprobanteUrl} 
+                        target="_blank" 
+                        rel="noreferrer"
+                        className="text-xs text-primary hover:underline flex items-center gap-1"
+                      >
+                        📄 Ver comprobante
+                      </a>
+                    ) : (
+                      <span className="text-xs text-gray-400">—</span>
+                    )}
+                  </td>
                   <td className="py-2.5">
                     <AccionesInscripcion inscripcionId={inscripcion.id} />
                   </td>

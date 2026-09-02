@@ -198,9 +198,39 @@ export default async function TallerDetallePage({
                   </p>
                 </div>
               </div>
+
+              {/* Costo de Inscripción */}
+              {taller.esPago && taller.precio && (
+                <div className="flex items-center gap-3">
+                  <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-green-50 text-green-600">
+                    💲
+                  </div>
+                  <div>
+                    <p className="text-[11px] font-medium text-gray-400">Costo de inscripción</p>
+                    <div className="flex items-center gap-2">
+                      {taller.descuento ? (
+                        <>
+                          <span className="text-xs font-bold text-gray-400 line-through">
+                            ${Number(taller.precio).toLocaleString("es-AR")}
+                          </span>
+                          <span className="text-xs font-bold text-slate-800">
+                            ${(Number(taller.precio) * (1 - taller.descuento / 100)).toLocaleString("es-AR")}
+                          </span>
+                          <span className="text-[11px] font-bold text-green-600">
+                            (-{taller.descuento}%)
+                          </span>
+                        </>
+                      ) : (
+                        <span className="text-xs font-bold text-slate-800">
+                          ${Number(taller.precio).toLocaleString("es-AR")}
+                        </span>
+                      )}
+                    </div>
+                  </div>
+                </div>
+              )}
             </div>
 
-            {/* BOTONES DE ACCIÓN */}
             <div className="pt-4 space-y-3">
             {yaEstaInscripto ? (
   <p className="w-full rounded-xl bg-green-50 py-3 text-center text-xs font-bold text-green-700">
@@ -211,7 +241,11 @@ export default async function TallerDetallePage({
     Tu inscripción está pendiente de aprobación
   </p>
 ) : cuposDisponibles > 0 ? (
-  <BotonInscripcion tallerId={taller.id} />
+  <BotonInscripcion 
+    tallerId={taller.id} 
+    esPago={taller.esPago} 
+    precioFinal={taller.esPago && taller.precio ? (Number(taller.precio) * (1 - (taller.descuento || 0) / 100)) : undefined} 
+  />
 ) : (
   <button
     disabled

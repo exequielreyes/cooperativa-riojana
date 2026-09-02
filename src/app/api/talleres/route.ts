@@ -24,6 +24,9 @@ const crearTallerSchema = z.object({
   cuposTotales: z.coerce.number().int().positive(),
   requisitos: z.string().optional(),
   materialUrl: z.string().optional(),
+  esPago: z.boolean().default(false),
+  precio: z.coerce.number().optional().nullable(),
+  descuento: z.coerce.number().int().optional().nullable(),
 });
 
 export async function POST(request: NextRequest) {

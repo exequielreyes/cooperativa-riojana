@@ -44,7 +44,7 @@ const links = [
               <Link
                 key={link.href}
                 href={link.href}
-                className={`flex items-center gap-2.5 rounded-lg px-3 py-2 text-sm ${
+                className={`flex items-center justify-between rounded-lg px-3 py-2 text-sm ${
                   activo ? "bg-primary/10 text-primary" : "text-gray-600 hover:bg-surface-muted hover:text-primary"
                 }`}
               >

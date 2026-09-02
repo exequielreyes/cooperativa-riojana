@@ -62,7 +62,7 @@ export default async function AdminMetricasPage() {
   const metricas = [
     { label: "Socios Activos", valor: sociosActivos.toString() },
     { label: "Recaudación Mensual", valor: formatCurrency(Number(recaudacionMes._sum.monto ?? 0)) },
-    { label: "Solicitudes Pendientes", valor: contadores.socios.toString() },
+    // { label: "Solicitudes Pendientes", valor: contadores.socios.toString() },
     { label: "Talleres Activos", valor: talleresActivos.toString() },
   ];
 
@@ -71,6 +71,11 @@ export default async function AdminMetricasPage() {
       label: "Pagos por Revisar",
       valor: contadores.pagos,
       href: "/admin/pagos?estado=PENDIENTE_REVISION",
+    },
+    {
+      label: "Solicitud de Socios Nuevos",
+      valor: contadores.socios,
+      href: "/admin/socios",
     },
     {
       label: "Inscripciones a Talleres Pendientes",
@@ -88,7 +93,7 @@ export default async function AdminMetricasPage() {
         </div>
       </div>
 
-      <div className="mb-6 grid gap-4 sm:grid-cols-2">
+      <div className="mb-6 grid gap-4 sm:grid-cols-3">
         {pendientesAccion.map((p) => (
           <Link
             key={p.label}
@@ -108,7 +113,7 @@ export default async function AdminMetricasPage() {
         ))}
       </div>
 
-      <div className="mb-8 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+      <div className="mb-8 grid gap-4 sm:grid-cols-3 lg:grid-cols-4">
         {metricas.map((metrica) => (
           <div key={metrica.label} className="card">
             <p className="text-xs text-gray-400">{metrica.label}</p>

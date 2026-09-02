@@ -35,6 +35,17 @@ export async function POST(
     return NextResponse.json({ error: "No quedan cupos disponibles" }, { status: 409 });
   }
 
+  const formData = await request.formData().catch(() => null);
+  let comprobanteUrl: string | undefined = undefined;
+
+  if (formData) {
+    const file = formData.get("comprobante") as File | null;
+    if (file && file.size > 0) {
+      const { guardarArchivo } = await import("@/lib/storage");
+      comprobanteUrl = await guardarArchivo(file, "comprobantes-talleres");
+    }
+  }
+
   const inscripcion = await prisma.inscripcionTaller.upsert({
     where: {
       tallerId_socioId: { tallerId: taller.id, socioId: session.user.socioId },
@@ -42,11 +53,13 @@ export async function POST(
     update: {
       estado: "PENDIENTE",
       fechaInscripcion: new Date(),
+      ...(comprobanteUrl && { comprobanteUrl }),
     },
     create: {
       tallerId: taller.id,
       socioId: session.user.socioId,
       estado: "PENDIENTE",
+      ...(comprobanteUrl && { comprobanteUrl }),
     },
   });
 

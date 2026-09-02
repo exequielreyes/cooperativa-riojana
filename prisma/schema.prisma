@@ -240,6 +240,9 @@ model Taller {
   materialUrl       String?
   moodleCourseId    Int?             // id numerico del curso en Moodle (LMS)
   estado            String           @default("ACTIVO") // ACTIVO, FINALIZADO, CANCELADO
+  esPago            Boolean          @default(false)
+  precio            Decimal?         @db.Decimal(10, 2)
+  descuento         Int?             // Porcentaje de descuento, ej: 20
 
   createdAt         DateTime         @default(now())
   updatedAt         DateTime         @updatedAt
@@ -260,6 +263,7 @@ model InscripcionTaller {
 
   estado          EstadoInscripcion @default(PENDIENTE)
   observaciones   String?
+  comprobanteUrl  String?
   fechaInscripcion DateTime         @default(now())
 
   @@map("inscripciones_talleres")
