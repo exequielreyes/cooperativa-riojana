@@ -97,5 +97,25 @@ export async function POST(
     },
   });
 
+  // Notificar a los socios inscriptos
+  const inscriptos = await prisma.inscripcionTaller.findMany({
+    where: {
+      tallerId: params.id,
+      estado: "CONFIRMADO",
+    },
+    select: { socioId: true },
+  });
+
+  if (inscriptos.length > 0) {
+    await prisma.notificacion.createMany({
+      data: inscriptos.map((inscripcion) => ({
+        socioId: inscripcion.socioId,
+        titulo: `Nuevo material en: ${taller.titulo}`,
+        mensaje: `Se ha publicado un nuevo contenido titulado "${contenido.titulo}".`,
+        link: `/portal/talleres/${params.id}/contenido`,
+      })),
+    });
+  }
+
   return NextResponse.json(contenido, { status: 201 });
 }

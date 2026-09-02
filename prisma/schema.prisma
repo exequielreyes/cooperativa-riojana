@@ -122,6 +122,7 @@ model Socio {
   cuotas            Cuota[]
   pagos             Pago[]
   inscripciones     InscripcionTaller[]
+  notificaciones    Notificacion[]
 
   @@map("socios")
   @@index([region])
@@ -403,4 +404,18 @@ model PasswordResetToken {
 
   @@map("password_reset_tokens")
   @@index([usuarioId])
+}
+
+model Notificacion {
+  id          String   @id @default(cuid())
+  socioId     String
+  socio       Socio    @relation(fields: [socioId], references: [id], onDelete: Cascade)
+  titulo      String
+  mensaje     String   @db.Text
+  link        String?
+  leida       Boolean  @default(false)
+  createdAt   DateTime @default(now())
+
+  @@map("notificaciones")
+  @@index([socioId, leida])
 }

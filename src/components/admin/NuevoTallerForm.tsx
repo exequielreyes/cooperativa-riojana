@@ -46,7 +46,7 @@ export function NuevoTallerForm() {
       return;
     }
 
-    router.push("/admin/contenidos");
+    router.push("/admin/talleres");
     router.refresh();
   }
 
@@ -138,7 +138,7 @@ export function NuevoTallerForm() {
       {error && <p className="text-sm text-status-danger">{error}</p>}
 
       <div className="flex justify-end gap-3">
-        <button type="button" className="btn-secondary" onClick={() => router.push("/admin/contenidos")}>
+        <button type="button" className="btn-secondary" onClick={() => router.push("/admin/talleres")}>
           Cancelar
         </button>
         <button type="submit" className="btn-primary" disabled={enviando}>
