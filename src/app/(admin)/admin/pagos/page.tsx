@@ -1,7 +1,9 @@
+import { redirect } from "next/navigation";
 import { prisma } from "@/lib/db";
 import { StatusBadge } from "@/components/ui/StatusBadge";
 import { AccionesPago } from "@/components/admin/AccionesPago";
 import { ConfiguracionCuotaCard } from "@/components/admin/ConfiguracionCuotaCard";
+import { ConfiguracionCapitalCard } from "@/components/admin/ConfiguracionCapitalCard";
 import { FiltrosPagos } from "@/components/admin/FiltrosPagos";
 import { RegistrarPagoEfectivo } from "@/components/admin/RegistrarPagoEfectivo";
 import { formatCurrency, formatDate } from "@/lib/utils";
@@ -67,6 +69,16 @@ export default async function AdminPagosPage({
     }),
   ]);
 
+  // Si el usuario aprueba todas las solicitudes pendientes y se queda en la vista
+  // filtrada por "Pendiente", redirigimos automáticamente a "Todos los estados"
+  if (estado === "PENDIENTE_REVISION" && pagos.length === 0) {
+    const params = new URLSearchParams();
+    if (q) params.set("q", q);
+    if (metodo) params.set("metodo", metodo);
+    const redirectUrl = `/admin/pagos${params.toString() ? `?${params.toString()}` : ""}`;
+    redirect(redirectUrl);
+  }
+
   // El link de exportar respeta los mismos filtros activos en pantalla.
   const paramsExport = new URLSearchParams();
   if (q) paramsExport.set("q", q);
@@ -105,8 +117,9 @@ export default async function AdminPagosPage({
         </div>
       </div>
 
-      <div className="mb-6">
+      <div className="mb-6 grid gap-4 sm:grid-cols-2">
         <ConfiguracionCuotaCard montoActual={Number(configuracion.montoCuotaActual)} />
+        <ConfiguracionCapitalCard montoActual={Number(configuracion.montoCapitalActual)} />
       </div>
 
       <FiltrosPagos />

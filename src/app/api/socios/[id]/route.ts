@@ -69,6 +69,35 @@ export async function PATCH(request: NextRequest, { params }: { params: { id: st
     } catch (error) {
       console.error("No se pudo enviar el email de credenciales:", error);
     }
+
+    // Generar cuotas de capital
+    if (socioActual.montoCapital && socioActual.cuotasCapital && socioActual.cuotasCapital > 0) {
+      // Verificamos si ya tiene cuotas de capital para no duplicar (por si se aprueba 2 veces por error)
+      const cuotasExistentes = await prisma.cuota.count({
+        where: { socioId: socioActual.id, concepto: { startsWith: "Cuota Inicial" } },
+      });
+
+      if (cuotasExistentes === 0) {
+        const montoPorCuota = Number(socioActual.montoCapital) / socioActual.cuotasCapital;
+        const cuotasParaCrear = [];
+        const fechaActual = new Date();
+        for (let i = 1; i <= socioActual.cuotasCapital; i++) {
+          const fechaVencimiento = new Date(fechaActual);
+          fechaVencimiento.setMonth(fechaVencimiento.getMonth() + i);
+          fechaVencimiento.setDate(10); // Vence los 10 de cada mes
+          
+          cuotasParaCrear.push({
+            socioId: socioActual.id,
+            periodo: `${fechaVencimiento.toLocaleString('es-AR', { month: 'long' })} ${fechaVencimiento.getFullYear()}`,
+            concepto: socioActual.cuotasCapital === 1 ? "Cuota Inicial" : `Cuota Inicial ${i}/${socioActual.cuotasCapital}`,
+            monto: montoPorCuota,
+            fechaVencimiento,
+            estado: "PENDIENTE",
+          });
+        }
+        await prisma.cuota.createMany({ data: cuotasParaCrear as any });
+      }
+    }
   }
 
   // Dar de baja desactiva también el acceso a la cuenta; reactivar lo restaura.

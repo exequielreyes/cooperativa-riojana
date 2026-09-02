@@ -36,7 +36,7 @@ const cuotas = cuotasPendientes.map((cuota) => {
     const ultimoPago = cuota.pagos[0];
     return {
       id: cuota.id,
-      periodo: cuota.periodo,
+      periodo: `${cuota.concepto} ${cuota.periodo}`,
       monto: Number(cuota.monto),
       fechaVencimiento: cuota.fechaVencimiento.toISOString(),
       enRevision: ultimoPago?.estadoValidacion === "PENDIENTE_REVISION",

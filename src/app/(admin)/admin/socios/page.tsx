@@ -16,7 +16,7 @@ const estadoTone: Record<string, "success" | "warning" | "neutral"> = {
   INACTIVO: "neutral",
 };
 
-const PAGE_SIZE = 10;
+const PAGE_SIZE = 7;
 
 export default async function AdminSociosPage({
   searchParams,
@@ -139,24 +139,65 @@ export default async function AdminSociosPage({
         </table>
 
         {total > 0 && (
-          <div className="flex items-center justify-between border-t border-surface-border px-6 py-3 text-xs text-gray-400">
-            <span>
+          <div className="flex flex-col items-center justify-between gap-4 border-t border-surface-border px-6 py-4 sm:flex-row">
+            <span className="text-sm text-gray-500">
               Mostrando {(page - 1) * PAGE_SIZE + 1}-{Math.min(page * PAGE_SIZE, total)} de {total} socios
             </span>
-            <div className="flex gap-2">
+            <nav aria-label="Paginación" className="flex items-center gap-2">
               <Link
                 href={queryStringConPage(Math.max(1, page - 1))}
-                className={`rounded px-2 py-1 ${page === 1 ? "pointer-events-none opacity-40" : "hover:bg-surface-muted"}`}
+                aria-disabled={page === 1}
+                className={`flex h-9 w-9 items-center justify-center rounded-lg border border-surface-border text-gray-500 transition-colors hover:bg-surface-muted ${
+                  page === 1 ? "pointer-events-none opacity-40" : ""
+                }`}
               >
-                ‹
+                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="m15 18-6-6 6-6"/></svg>
               </Link>
+              
+              {(() => {
+                const delta = 1;
+                const range: (number | "...")[] = [];
+                const start = Math.max(2, page - delta);
+                const end = Math.min(totalPaginas - 1, page + delta);
+
+                range.push(1);
+                if (start > 2) range.push("...");
+                for (let i = start; i <= end; i++) range.push(i);
+                if (end < totalPaginas - 1) range.push("...");
+                if (totalPaginas > 1) range.push(totalPaginas);
+
+                return range.map((p, idx) => 
+                  p === "..." ? (
+                    <span key={`dots-${idx}`} className="px-1 text-sm text-gray-400">
+                      …
+                    </span>
+                  ) : (
+                    <Link
+                      key={p}
+                      href={queryStringConPage(p as number)}
+                      aria-current={p === page ? "page" : undefined}
+                      className={`flex h-9 w-9 items-center justify-center rounded-lg text-sm font-medium transition-colors ${
+                        p === page
+                          ? "bg-primary text-white"
+                          : "border border-surface-border text-gray-600 hover:bg-surface-muted"
+                      }`}
+                    >
+                      {p}
+                    </Link>
+                  )
+                );
+              })()}
+
               <Link
                 href={queryStringConPage(Math.min(totalPaginas, page + 1))}
-                className={`rounded px-2 py-1 ${page === totalPaginas ? "pointer-events-none opacity-40" : "hover:bg-surface-muted"}`}
+                aria-disabled={page === totalPaginas}
+                className={`flex h-9 w-9 items-center justify-center rounded-lg border border-surface-border text-gray-500 transition-colors hover:bg-surface-muted ${
+                  page === totalPaginas ? "pointer-events-none opacity-40" : ""
+                }`}
               >
-                ›
+                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="m9 18 6-6-6-6"/></svg>
               </Link>
-            </div>
+            </nav>
           </div>
         )}
       </div>

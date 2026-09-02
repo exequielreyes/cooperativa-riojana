@@ -9,10 +9,12 @@ const crearSocioSchema = z.object({
   apellido: z.string().min(1),
   dni: z.string().min(1),
   email: z.string().email(),
-  telefono: z.string().optional(),
-  region: z.string().optional(),
+  telefono: z.string().nullable().optional(),
+  region: z.string().nullable().optional(),
   tipoMiembro: z.enum(["PRODUCTOR", "ADHERENTE", "HONORARIO"]).default("PRODUCTOR"),
   estado: z.enum(["ACTIVO", "PENDIENTE"]).default("PENDIENTE"),
+  cuotasCapital: z.coerce.number().min(1).default(1),
+  montoCapital: z.coerce.number().optional(),
 });
 
 export async function GET() {
@@ -74,11 +76,37 @@ export async function POST(request: NextRequest) {
           tipoMiembro: data.tipoMiembro,
           estado: data.estado,
           idCooperativa,
+          cuotasCapital: data.cuotasCapital,
+          montoCapital: data.montoCapital,
         },
       },
     },
     include: { socio: true },
   });
+
+  if (data.estado === "ACTIVO") {
+    // Generar cuotas de capital
+    if (data.montoCapital && data.cuotasCapital && data.cuotasCapital > 0) {
+      const montoPorCuota = data.montoCapital / data.cuotasCapital;
+      const cuotasParaCrear = [];
+      const fechaActual = new Date();
+      for (let i = 1; i <= data.cuotasCapital; i++) {
+        const fechaVencimiento = new Date(fechaActual);
+        fechaVencimiento.setMonth(fechaVencimiento.getMonth() + i);
+        fechaVencimiento.setDate(10); // Vence los 10 de cada mes
+        
+        cuotasParaCrear.push({
+          socioId: usuario.socio!.id,
+          periodo: `${fechaVencimiento.toLocaleString('es-AR', { month: 'long' })} ${fechaVencimiento.getFullYear()}`,
+          concepto: data.cuotasCapital === 1 ? "Cuota Inicial" : `Cuota Inicial ${i}/${data.cuotasCapital}`,
+          monto: montoPorCuota,
+          fechaVencimiento,
+          estado: "PENDIENTE",
+        });
+      }
+      await prisma.cuota.createMany({ data: cuotasParaCrear as any });
+    }
+  }
 
   if (data.estado !== "ACTIVO") {
     // Pendiente: no devolvemos la contraseña bajo ningún concepto.
