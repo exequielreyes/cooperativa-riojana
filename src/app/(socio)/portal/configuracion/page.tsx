@@ -21,6 +21,7 @@ export default async function ConfiguracionSocioPage() {
           telefono: socio!.telefono ?? "",
           email: socio!.email,
           fotoUrl: socio!.fotoUrl,
+          fechaNacimiento: socio!.fechaNacimiento ? socio!.fechaNacimiento.toISOString().split("T")[0] : "",
         }}
       />
 

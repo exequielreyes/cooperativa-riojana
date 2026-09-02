@@ -15,6 +15,7 @@ const editarSocioSchema = z.object({
   tipoMiembro: z.enum(["PRODUCTOR", "ADHERENTE", "HONORARIO"]).optional(),
   estado: z.enum(["ACTIVO", "PENDIENTE", "INACTIVO"]).optional(),
   motivoBaja: z.string().nullable().optional(),
+  fechaNacimiento: z.string().nullable().optional(),
 });
 
 export async function GET(_req: NextRequest, { params }: { params: { id: string } }) {
@@ -107,9 +108,14 @@ export async function PATCH(request: NextRequest, { params }: { params: { id: st
     await prisma.usuario.update({ where: { id: socioActual.usuarioId }, data: { activo: true } });
   }
 
+  const dataToUpdate: any = { ...parsed.data };
+  if (dataToUpdate.fechaNacimiento) {
+    dataToUpdate.fechaNacimiento = new Date(dataToUpdate.fechaNacimiento);
+  }
+
   const socio = await prisma.socio.update({
     where: { id: params.id },
-    data: parsed.data,
+    data: dataToUpdate,
   });
 
   return NextResponse.json({ socio, passwordTemporal, emailEnviado });
