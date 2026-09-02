@@ -71,7 +71,13 @@ export function NuevoTallerForm() {
       <div className="card">
         <p className="mb-4 font-medium text-primary-dark">Fecha y Ubicación</p>
         <div className="grid gap-4 sm:grid-cols-2">
-          <input className="input" type="date" name="fecha" required />
+          <input 
+            className="input" 
+            type="date" 
+            name="fecha" 
+            required 
+            min={new Date().toISOString().split("T")[0]} 
+          />
           <select className="input" name="modalidad" defaultValue="PRESENCIAL">
             <option value="PRESENCIAL">Presencial</option>
             <option value="VIRTUAL">Virtual</option>
