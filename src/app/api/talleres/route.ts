@@ -16,6 +16,7 @@ const crearTallerSchema = z.object({
   descripcion: z.string().min(1),
   categoria: z.string().min(1),
   instructor: z.string().optional(),
+  profesorId: z.string().optional().nullable(),
   ubicacion: z.string().optional(),
   modalidad: z.enum(["PRESENCIAL", "VIRTUAL"]),
   fecha: z.string().min(1),
@@ -39,6 +40,15 @@ export async function POST(request: NextRequest) {
   const parsed = crearTallerSchema.safeParse(body);
   if (!parsed.success) {
     return NextResponse.json({ error: parsed.error.flatten() }, { status: 400 });
+  }
+
+  // Si viene un profesorId, confirmamos que exista y sea realmente un PROFESOR
+  // (evita guardar cualquier id suelto si el form se manipula desde afuera).
+  if (parsed.data.profesorId) {
+    const profesor = await prisma.usuario.findUnique({ where: { id: parsed.data.profesorId } });
+    if (!profesor || profesor.rol !== "PROFESOR") {
+      return NextResponse.json({ error: "El profesor seleccionado no es válido" }, { status: 400 });
+    }
   }
 
   const slugBase = parsed.data.titulo
