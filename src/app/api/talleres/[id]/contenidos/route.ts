@@ -34,13 +34,23 @@ export async function POST(
   { params }: { params: { id: string } }
 ) {
   const session = await getServerSession(authOptions);
-  if (!esEditor(session?.user.rol)) {
+  if (!session) {
     return NextResponse.json({ error: "No autorizado" }, { status: 403 });
   }
 
   const taller = await prisma.taller.findUnique({ where: { id: params.id } });
   if (!taller) {
     return NextResponse.json({ error: "Taller no encontrado" }, { status: 404 });
+  }
+
+  // Puede subir material: admin/editor de contenidos (cualquier taller), o el
+  // profesor asignado a ESTE taller puntual (no a cualquier otro).
+  const puedeGestionar =
+    esEditor(session.user.rol) ||
+    (session.user.rol === "PROFESOR" && taller.profesorId === session.user.id);
+
+  if (!puedeGestionar) {
+    return NextResponse.json({ error: "No autorizado" }, { status: 403 });
   }
 
   const formData = await request.formData();

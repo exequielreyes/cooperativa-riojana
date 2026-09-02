@@ -91,6 +91,7 @@ model Usuario {
   noticias      Noticia[]  @relation("AutorNoticia")
   pagosValidados Pago[]    @relation("ValidadorPago")
   resetTokens   PasswordResetToken[]
+  talleresDictados Taller[] @relation("ProfesorTaller")
 
   @@map("usuarios")
 }
@@ -232,7 +233,9 @@ model Taller {
   slug              String           @unique
   descripcion       String           @db.Text
   categoria         String           // Salud, Educación, Cultura, Social...
-  instructor        String?
+  instructor        String?          // texto libre, se muestra en la parte pública (bio/nombre)
+  profesorId        String?          // relación real al Usuario con rol PROFESOR que dicta el taller
+  profesor          Usuario?         @relation("ProfesorTaller", fields: [profesorId], references: [id])
   ubicacion         String?
   modalidad         ModalidadTaller  @default(PRESENCIAL)
   fecha             DateTime
@@ -257,6 +260,7 @@ model Taller {
 
   @@map("talleres")
   @@index([fecha])
+  @@index([profesorId])
 }
 
 model InscripcionTaller {

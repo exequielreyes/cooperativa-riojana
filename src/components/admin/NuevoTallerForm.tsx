@@ -1,13 +1,28 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
+
+interface Profesor {
+  id: string;
+  nombre: string | null;
+  email: string;
+}
 
 export function NuevoTallerForm() {
   const router = useRouter();
   const [enviando, setEnviando] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [esPago, setEsPago] = useState(false);
+  const [profesores, setProfesores] = useState<Profesor[]>([]);
+  const [profesorId, setProfesorId] = useState("");
+
+  useEffect(() => {
+    fetch("/api/usuarios/profesores")
+      .then((res) => (res.ok ? res.json() : []))
+      .then(setProfesores)
+      .catch(() => setProfesores([]));
+  }, []);
 
   async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
@@ -20,6 +35,7 @@ export function NuevoTallerForm() {
       descripcion: formData.get("descripcion"),
       categoria: formData.get("categoria"),
       instructor: formData.get("instructor"),
+      profesorId: profesorId || null,
       ubicacion: formData.get("ubicacion"),
       modalidad: formData.get("modalidad"),
       fecha: formData.get("fecha"),
@@ -64,7 +80,26 @@ export function NuevoTallerForm() {
             <option>Social</option>
             <option>Técnico</option>
           </select>
-          <input className="input" name="instructor" placeholder="Instructor (opcional)" />
+          <input className="input" name="instructor" placeholder="Instructor (texto para mostrar, opcional)" />
+        </div>
+
+        <div className="mt-4">
+          <label className="mb-1 block text-xs text-gray-400">
+            Profesor a cargo (con acceso al panel para subir material y ver inscriptos)
+          </label>
+          <select className="input" value={profesorId} onChange={(e) => setProfesorId(e.target.value)}>
+            <option value="">Sin asignar</option>
+            {profesores.map((p) => (
+              <option key={p.id} value={p.id}>
+                {p.nombre ?? p.email}
+              </option>
+            ))}
+          </select>
+          {profesores.length === 0 && (
+            <p className="mt-1 text-xs text-gray-400">
+              Todavía no hay profesores creados — dalos de alta desde Configuración.
+            </p>
+          )}
         </div>
       </div>
 
@@ -106,8 +141,8 @@ export function NuevoTallerForm() {
         <div className="flex items-center justify-between mb-2">
           <p className="font-medium text-primary-dark">Costo de Inscripción</p>
           <label className="flex items-center gap-2 text-sm text-gray-600 cursor-pointer">
-            <input 
-              type="checkbox" 
+            <input
+              type="checkbox"
               className="rounded border-gray-300 text-primary focus:ring-primary"
               checked={esPago}
               onChange={(e) => setEsPago(e.target.checked)}
@@ -115,27 +150,27 @@ export function NuevoTallerForm() {
             Es un taller pago
           </label>
         </div>
-        
+
         {!esPago ? (
           <p className="text-sm text-gray-400">El taller es gratuito para los socios.</p>
         ) : (
           <div className="mt-4 flex gap-4">
-            <input 
-              className="input flex-1" 
-              type="number" 
-              min="0" 
-              step="0.01" 
-              name="precio" 
-              placeholder="Precio ($)" 
-              required={esPago} 
+            <input
+              className="input flex-1"
+              type="number"
+              min="0"
+              step="0.01"
+              name="precio"
+              placeholder="Precio ($)"
+              required={esPago}
             />
-            <input 
-              className="input flex-1" 
-              type="number" 
-              min="0" 
-              max="100" 
-              name="descuento" 
-              placeholder="Descuento (%) — opcional" 
+            <input
+              className="input flex-1"
+              type="number"
+              min="0"
+              max="100"
+              name="descuento"
+              placeholder="Descuento (%) — opcional"
             />
           </div>
         )}
