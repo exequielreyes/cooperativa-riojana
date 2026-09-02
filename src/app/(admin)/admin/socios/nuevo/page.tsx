@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 
 export default function NuevoSocioPage() {
@@ -12,6 +12,15 @@ export default function NuevoSocioPage() {
     | { tipo: "pendiente" }
     | null
   >(null);
+  const [cuotasCapital, setCuotasCapital] = useState(1);
+  const [montoCapitalActual, setMontoCapitalActual] = useState(50000);
+
+  useEffect(() => {
+    fetch("/api/configuracion/public")
+      .then((res) => res.json())
+      .then((data) => setMontoCapitalActual(data.montoCapitalActual))
+      .catch(() => {});
+  }, []);
 
   async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
@@ -29,6 +38,8 @@ export default function NuevoSocioPage() {
       region: formData.get("region"),
       tipoMiembro: formData.get("tipoMiembro"),
       estado,
+      cuotasCapital,
+      montoCapital: montoCapitalActual,
     };
 
     const res = await fetch("/api/socios", {
@@ -41,7 +52,19 @@ export default function NuevoSocioPage() {
 
     if (!res.ok) {
       const data = await res.json();
-      setError(data.error?.formErrors?.[0] ?? data.error ?? "No se pudo crear el socio.");
+      const errObj = data.error;
+      if (typeof errObj === "string") {
+        setError(errObj);
+      } else if (errObj && typeof errObj === "object") {
+        const fieldErrs = Object.values(errObj.fieldErrors ?? {}) as string[][];
+        setError(
+          errObj.formErrors?.[0] ??
+            fieldErrs[0]?.[0] ??
+            "No se pudo crear el socio."
+        );
+      } else {
+        setError("No se pudo crear el socio.");
+      }
       return;
     }
 
@@ -145,6 +168,58 @@ export default function NuevoSocioPage() {
               <option value="PENDIENTE">Pendiente</option>
             </select>
           </div>
+        </div>
+
+        <div className="card">
+          <p className="font-medium text-primary-dark">Cuota de Asociación</p>
+          <div className="mt-4 grid gap-4 sm:grid-cols-2">
+            <label className={`cursor-pointer rounded-lg border p-4 transition-colors ${cuotasCapital === 1 ? 'border-primary bg-primary/5' : 'border-surface-border hover:border-primary/30'}`}>
+              <div className="flex items-center gap-2">
+                <input 
+                  type="radio" 
+                  name="tipoPago" 
+                  checked={cuotasCapital === 1} 
+                  onChange={() => setCuotasCapital(1)} 
+                  className="text-primary focus:ring-primary"
+                />
+                <span className="font-medium text-primary-dark">Pagar en el momento</span>
+              </div>
+              <p className="mt-1 text-sm text-gray-500 ml-5">Un único pago de contado al ser aprobado.</p>
+            </label>
+            
+            <label className={`cursor-pointer rounded-lg border p-4 transition-colors ${cuotasCapital > 1 ? 'border-primary bg-primary/5' : 'border-surface-border hover:border-primary/30'}`}>
+              <div className="flex items-center gap-2">
+                <input 
+                  type="radio" 
+                  name="tipoPago" 
+                  checked={cuotasCapital > 1} 
+                  onChange={() => setCuotasCapital(12)} 
+                  className="text-primary focus:ring-primary"
+                />
+                <span className="font-medium text-primary-dark">Financiar en cuotas</span>
+              </div>
+              <p className="mt-1 text-sm text-gray-500 ml-5">Mensuales, hasta 5 años (60 cuotas).</p>
+            </label>
+          </div>
+
+          <p className="mt-3 text-sm font-medium text-primary-dark">
+            Monto a financiar: ${Number(montoCapitalActual).toLocaleString("es-AR")}
+          </p>
+
+          {cuotasCapital > 1 && (
+            <div className="mt-4">
+              <label className="mb-1 block text-sm text-gray-600">¿En cuántas cuotas mensuales?</label>
+              <input 
+                type="number" 
+                min={2} 
+                max={60} 
+                className="input" 
+                value={cuotasCapital}
+                onChange={(e) => setCuotasCapital(parseInt(e.target.value) || 2)}
+                required 
+              />
+            </div>
+          )}
         </div>
 
         {error && <p className="text-sm text-status-danger">{error}</p>}
