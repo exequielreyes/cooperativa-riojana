@@ -111,6 +111,7 @@ export default async function AdminTalleresPage() {
               <th className="px-6 py-3 font-normal">Categoría</th>
               <th className="px-6 py-3 font-normal">Inscriptos</th>
               <th className="px-6 py-3 font-normal">Contenido</th>
+              <th className="px-6 py-3 font-normal">Editar</th>
             </tr>
           </thead>
           <tbody>
@@ -126,6 +127,14 @@ export default async function AdminTalleresPage() {
                     className="text-primary hover:underline"
                   >
                     Gestionar
+                  </Link>
+                </td>
+                <td className="px-6 py-3">
+                  <Link
+                    href={`/admin/contenidos/talleres/${taller.id}/editar`}
+                    className="text-primary hover:underline"
+                  >
+                    Editar
                   </Link>
                 </td>
               </tr>
