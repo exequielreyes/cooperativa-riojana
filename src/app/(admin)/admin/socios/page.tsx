@@ -21,11 +21,13 @@ const PAGE_SIZE = 7;
 export default async function AdminSociosPage({
   searchParams,
 }: {
-  searchParams: { q?: string; region?: string; estado?: string; page?: string };
+  searchParams: { q?: string; region?: string; estado?: string; page?: string; edad?: string; filtroExtra?: string };
 }) {
   const q = searchParams.q ?? "";
   const region = searchParams.region ?? "";
   const estado = searchParams.estado ?? "";
+  const edad = searchParams.edad ?? "";
+  const filtroExtra = searchParams.filtroExtra ?? "";
   const page = Math.max(1, parseInt(searchParams.page ?? "1", 10) || 1);
 
   let whereEstado: any = undefined;
@@ -41,6 +43,30 @@ export default async function AdminSociosPage({
     whereEstado = { estado: estado as "ACTIVO" | "PENDIENTE" };
   }
 
+  let whereEdad: any = undefined;
+  if (edad) {
+    const hoy = new Date();
+    if (edad === "18-25") {
+      whereEdad = { fechaNacimiento: { gt: new Date(hoy.getFullYear() - 26, hoy.getMonth(), hoy.getDate()), lte: new Date(hoy.getFullYear() - 18, hoy.getMonth(), hoy.getDate()) } };
+    } else if (edad === "26-35") {
+      whereEdad = { fechaNacimiento: { gt: new Date(hoy.getFullYear() - 36, hoy.getMonth(), hoy.getDate()), lte: new Date(hoy.getFullYear() - 26, hoy.getMonth(), hoy.getDate()) } };
+    } else if (edad === "36-50") {
+      whereEdad = { fechaNacimiento: { gt: new Date(hoy.getFullYear() - 51, hoy.getMonth(), hoy.getDate()), lte: new Date(hoy.getFullYear() - 36, hoy.getMonth(), hoy.getDate()) } };
+    } else if (edad === "50+") {
+      whereEdad = { fechaNacimiento: { lte: new Date(hoy.getFullYear() - 51, hoy.getMonth(), hoy.getDate()) } };
+    }
+  }
+
+  let whereFiltroExtra: any = undefined;
+  if (filtroExtra === "nuevos") {
+    const hace30dias = new Date();
+    hace30dias.setDate(hace30dias.getDate() - 30);
+    whereFiltroExtra = { createdAt: { gte: hace30dias } };
+  } else if (filtroExtra === "cumpleanos_mes") {
+    const results = await prisma.$queryRaw<{id: string}[]>`SELECT id FROM socios WHERE MONTH(fechaNacimiento) = MONTH(CURRENT_DATE())`;
+    whereFiltroExtra = { id: { in: results.map(r => r.id) } };
+  }
+
   const where = {
     ...(q && {
       OR: [
@@ -52,6 +78,8 @@ export default async function AdminSociosPage({
     }),
     ...(region && { region }),
     ...(whereEstado && whereEstado),
+    ...(whereEdad && whereEdad),
+    ...(whereFiltroExtra && whereFiltroExtra),
   };
 
   const [socios, total, regiones] = await Promise.all([
@@ -72,6 +100,8 @@ export default async function AdminSociosPage({
     if (q) params.set("q", q);
     if (region) params.set("region", region);
     if (estado) params.set("estado", estado);
+    if (edad) params.set("edad", edad);
+    if (filtroExtra) params.set("filtroExtra", filtroExtra);
     params.set("page", p.toString());
     return `?${params.toString()}`;
   }
