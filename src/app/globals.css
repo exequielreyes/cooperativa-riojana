@@ -2,9 +2,11 @@
 @tailwind components;
 @tailwind utilities;
 
+
 :root {
   --font-sans: "Inter", system-ui, sans-serif;
 }
+
 
 body {
   @apply bg-surface text-primary-dark antialiased;
@@ -34,7 +36,7 @@ body {
   }
 
   .btn-primary {
-    @apply rounded-lg bg-primary px-4 py-2.5 text-sm font-medium text-white transition-colors hover:bg-primary-light;
+    @apply rounded-lg bg-primary px-4 py-2.5 text-sm font-medium text-white dark:text-gray-900 transition-colors hover:bg-primary-light;
   }
 
   .btn-secondary {
@@ -44,4 +46,72 @@ body {
   .input {
     @apply w-full rounded-lg border border-surface-border bg-white px-3.5 py-2.5 text-sm placeholder:text-gray-400 focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary;
   }
+}
+
+
+
+
+/* Modo oscuro forzado para el panel admin */
+.admin-theme {
+  @apply bg-slate-900 text-slate-200;
+}
+
+.admin-theme .card {
+  @apply bg-slate-800 border-slate-700 text-slate-200 shadow-none;
+}
+
+.admin-theme .input {
+  @apply bg-slate-800 border-slate-700 text-slate-200 placeholder:text-slate-500 focus:border-accent focus:ring-accent;
+}
+
+.admin-theme select.input {
+  @apply bg-slate-800 text-slate-200;
+}
+
+.admin-theme .btn-secondary {
+  @apply bg-slate-800 border-slate-600 text-slate-200 hover:bg-slate-700;
+}
+
+.admin-theme h1, .admin-theme h2, .admin-theme h3, .admin-theme h4, .admin-theme h5, .admin-theme h6, .admin-theme .text-primary-dark {
+  @apply text-white;
+}
+
+.admin-theme .text-primary, .admin-theme .hover\:text-primary:hover, .admin-theme .group-hover\:text-primary:hover {
+  @apply text-emerald-400 !important;
+}
+
+.admin-theme .bg-primary, .admin-theme .hover\:bg-primary-light:hover {
+  @apply bg-emerald-600 !important;
+}
+
+.admin-theme .bg-primary\/10 {
+  @apply bg-emerald-400/10 !important;
+}
+
+.admin-theme .text-gray-600, .admin-theme .text-gray-500, .admin-theme .text-gray-400 {
+  @apply text-slate-400;
+}
+
+.admin-theme .bg-white {
+  @apply bg-slate-800 !important;
+}
+
+.admin-theme .border-surface-border, .admin-theme .border-gray-200, .admin-theme .border-b {
+  @apply border-slate-700 !important;
+}
+
+.admin-theme .hover\:bg-surface-muted:hover, .admin-theme .hover\:bg-gray-50:hover {
+  @apply hover:bg-slate-700 !important;
+}
+
+.admin-theme .bg-surface-muted, .admin-theme .bg-gray-50, .admin-theme .bg-gray-100 {
+  @apply bg-slate-900 !important;
+}
+
+.admin-theme table th {
+  @apply text-slate-300;
+}
+
+.admin-theme table td {
+  @apply text-slate-200;
 }

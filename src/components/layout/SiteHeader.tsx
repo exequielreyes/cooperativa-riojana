@@ -146,8 +146,18 @@ export function SiteHeader() {
                   </p>
                 )}
               </div>
-              <div className="flex h-8 w-8 items-center justify-center rounded-full bg-primary text-xs font-medium text-white">
-                {iniciales}
+              <div className="flex h-8 w-8 overflow-hidden items-center justify-center rounded-full bg-primary text-xs font-medium text-white">
+                {(session.user as any)?.fotoUrl ? (
+                  <Image 
+                    src={(session.user as any).fotoUrl} 
+                    alt="Perfil" 
+                    width={32} 
+                    height={32} 
+                    className="h-full w-full object-cover" 
+                  />
+                ) : (
+                  iniciales
+                )}
               </div>
               <ChevronDown size={16} className="text-gray-400" />
             </button>

@@ -4,6 +4,7 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import Image from "next/image";
 import { Camera } from "lucide-react";
+import { useSession } from "next-auth/react";
 
 interface Perfil {
   nombre: string;
@@ -16,6 +17,7 @@ interface Perfil {
 
 export function PerfilForm({ socio }: { socio: Perfil }) {
   const router = useRouter();
+  const { update } = useSession();
   const [enviando, setEnviando] = useState(false);
   const [mensaje, setMensaje] = useState<string | null>(null);
   const [subiendoFoto, setSubiendoFoto] = useState(false);
@@ -57,6 +59,7 @@ export function PerfilForm({ socio }: { socio: Perfil }) {
       if (res.ok) {
         const data = await res.json();
         setFotoUrl(data.fotoUrl);
+        await update({ fotoUrl: data.fotoUrl });
         router.refresh();
       }
     }
