@@ -49,18 +49,23 @@ export const authOptions: NextAuthOptions = {
             : usuario.email,
           socioId: usuario.socio?.id ?? null,
           idCooperativa: usuario.socio?.idCooperativa ?? null,
+          fotoUrl: usuario.socio?.fotoUrl ?? null,
         };
       },
     }),
   ],
   callbacks: {
     // Persistimos rol y datos de socio en el JWT para no consultar la DB en cada request
-    async jwt({ token, user }) {
+    async jwt({ token, user, trigger, session }) {
       if (user) {
         token.rol = (user as any).rol;
         token.nombre = (user as any).nombre;
         token.socioId = (user as any).socioId;
         token.idCooperativa = (user as any).idCooperativa;
+        token.fotoUrl = (user as any).fotoUrl;
+      }
+      if (trigger === "update" && session?.fotoUrl !== undefined) {
+        token.fotoUrl = session.fotoUrl;
       }
       return token;
     },
@@ -71,6 +76,7 @@ export const authOptions: NextAuthOptions = {
         (session.user as any).nombre = token.nombre;
         (session.user as any).socioId = token.socioId;
         (session.user as any).idCooperativa = token.idCooperativa;
+        (session.user as any).fotoUrl = token.fotoUrl;
       }
       return session;
     },

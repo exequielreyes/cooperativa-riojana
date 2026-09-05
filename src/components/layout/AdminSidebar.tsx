@@ -4,6 +4,7 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { signOut } from "next-auth/react";
 import { LayoutDashboard, Users, CreditCard, Newspaper, GraduationCap, BookOpen, Settings, LogOut } from "lucide-react";
+// import { ThemeToggle } from "@/components/ui/ThemeToggle";
 
 
 interface Contadores {
@@ -62,13 +63,16 @@ const links = [
           })}
         </nav>
       </div>
-      <button
-        onClick={() => signOut({ callbackUrl: "/login" })}
-        className="flex items-center gap-2 px-3 py-2 text-left text-sm text-gray-500 hover:text-status-danger"
-      >
-        <LogOut size={16} />
-        Cerrar Sesión
-      </button>
+      <div className="flex flex-col gap-2">
+        {/* <ThemeToggle /> */}
+        <button
+          onClick={() => signOut({ callbackUrl: "/login" })}
+          className="flex items-center gap-2 px-3 py-2 text-left text-sm text-gray-500 hover:text-status-danger"
+        >
+          <LogOut size={16} />
+          Cerrar Sesión
+        </button>
+      </div>
     </aside>
   );
 }
