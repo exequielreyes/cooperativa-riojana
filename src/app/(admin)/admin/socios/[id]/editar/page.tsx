@@ -14,6 +14,7 @@ export default async function EditarSocioPage({ params }: { params: { id: string
           id: socio.id,
           nombre: socio.nombre,
           apellido: socio.apellido,
+          dni: socio.dni,
           telefono: socio.telefono ?? "",
           direccion: socio.direccion ?? "",
           region: socio.region ?? "",
@@ -22,6 +23,11 @@ export default async function EditarSocioPage({ params }: { params: { id: string
           idCooperativa: socio.idCooperativa,
           email: socio.email,
           fechaNacimiento: socio.fechaNacimiento ? socio.fechaNacimiento.toISOString().split("T")[0] : "",
+          cuil: socio.cuil,
+          ocupacion: socio.ocupacion,
+          barrio: socio.barrio,
+          entrecalles: socio.entrecalles,
+          fechaing: socio.fechaing ? socio.fechaing.toISOString().split("T")[0] : "",
         }}
       />
     </div>

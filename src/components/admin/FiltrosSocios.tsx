@@ -15,15 +15,17 @@ export function FiltrosSocios({ regiones }: { regiones: string[] }) {
   const [estado, setEstado] = useState(searchParams.get("estado") ?? "");
   const [edad, setEdad] = useState(searchParams.get("edad") ?? "");
   const [filtroExtra, setFiltroExtra] = useState(searchParams.get("filtroExtra") ?? "");
+  const [mesCumpleanos, setMesCumpleanos] = useState(searchParams.get("mesCumpleanos") ?? "");
   const primerRender = useRef(true);
 
-  function actualizarUrl(next: { q: string; region: string; estado: string; edad: string; filtroExtra: string }) {
+  function actualizarUrl(next: { q: string; region: string; estado: string; edad: string; filtroExtra: string; mesCumpleanos: string }) {
     const params = new URLSearchParams();
     if (next.q) params.set("q", next.q);
     if (next.region) params.set("region", next.region);
     if (next.estado) params.set("estado", next.estado);
     if (next.edad) params.set("edad", next.edad);
     if (next.filtroExtra) params.set("filtroExtra", next.filtroExtra);
+    if (next.mesCumpleanos) params.set("mesCumpleanos", next.mesCumpleanos);
     params.set("page", "1");
 
     startTransition(() => {
@@ -36,29 +38,34 @@ export function FiltrosSocios({ regiones }: { regiones: string[] }) {
       primerRender.current = false;
       return;
     }
-    const timeout = setTimeout(() => actualizarUrl({ q, region, estado, edad, filtroExtra }), 350);
+    const timeout = setTimeout(() => actualizarUrl({ q, region, estado, edad, filtroExtra, mesCumpleanos }), 350);
     return () => clearTimeout(timeout);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [q]);
 
   function onRegionChange(value: string) {
     setRegion(value);
-    actualizarUrl({ q, region: value, estado, edad, filtroExtra });
+    actualizarUrl({ q, region: value, estado, edad, filtroExtra, mesCumpleanos });
   }
 
   function onEstadoChange(value: string) {
     setEstado(value);
-    actualizarUrl({ q, region, estado: value, edad, filtroExtra });
+    actualizarUrl({ q, region, estado: value, edad, filtroExtra, mesCumpleanos });
   }
 
   function onEdadChange(value: string) {
     setEdad(value);
-    actualizarUrl({ q, region, estado, edad: value, filtroExtra });
+    actualizarUrl({ q, region, estado, edad: value, filtroExtra, mesCumpleanos });
   }
 
   function onFiltroExtraChange(value: string) {
     setFiltroExtra(value);
-    actualizarUrl({ q, region, estado, edad, filtroExtra: value });
+    actualizarUrl({ q, region, estado, edad, filtroExtra: value, mesCumpleanos });
+  }
+
+  function onMesCumpleanosChange(value: string) {
+    setMesCumpleanos(value);
+    actualizarUrl({ q, region, estado, edad, filtroExtra, mesCumpleanos: value });
   }
 
   function limpiarFiltros() {
@@ -67,7 +74,8 @@ export function FiltrosSocios({ regiones }: { regiones: string[] }) {
     setEstado("");
     setEdad("");
     setFiltroExtra("");
-    actualizarUrl({ q: "", region: "", estado: "", edad: "", filtroExtra: "" });
+    setMesCumpleanos("");
+    actualizarUrl({ q: "", region: "", estado: "", edad: "", filtroExtra: "", mesCumpleanos: "" });
   }
 
   function toggleEstado(nuevoEstado: string) {
@@ -247,17 +255,40 @@ export function FiltrosSocios({ regiones }: { regiones: string[] }) {
 
         {/* EXTRAS */}
         <div className="flex flex-wrap items-center gap-2">
-          <button
-            onClick={() => toggleFiltroExtra("cumpleanos_mes")}
-            className={`flex items-center gap-1.5 rounded-full px-3 py-1.5 text-sm font-medium transition-colors ${
-              filtroExtra === "cumpleanos_mes"
-                ? "bg-primary/10 text-primary border border-primary/20"
-                : "bg-white text-gray-600 border border-gray-200 hover:bg-gray-50"
-            }`}
-          >
-            <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M20 21v-8a2 2 0 0 0-2-2H6a2 2 0 0 0-2 2v8"/><path d="M4 16s.5-1 2-1 2.5 2 4 2 2.5-2 4-2 2.5 2 4 2 2-1 2-1"/><path d="M2 21h20"/><path d="M7 8v3"/><path d="M12 8v3"/><path d="M17 8v3"/><path d="M7 4h.01"/><path d="M12 4h.01"/><path d="M17 4h.01"/></svg>
-            Cumpleaños este mes
-          </button>
+          <div className="flex items-center gap-2">
+            <button
+              onClick={() => toggleFiltroExtra("cumpleanos_mes")}
+              className={`flex items-center gap-1.5 rounded-full px-3 py-1.5 text-sm font-medium transition-colors ${
+                filtroExtra === "cumpleanos_mes"
+                  ? "bg-primary/10 text-primary border border-primary/20"
+                  : "bg-white text-gray-600 border border-gray-200 hover:bg-gray-50"
+              }`}
+            >
+              <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M20 21v-8a2 2 0 0 0-2-2H6a2 2 0 0 0-2 2v8"/><path d="M4 16s.5-1 2-1 2.5 2 4 2 2.5-2 4-2 2.5 2 4 2 2-1 2-1"/><path d="M2 21h20"/><path d="M7 8v3"/><path d="M12 8v3"/><path d="M17 8v3"/><path d="M7 4h.01"/><path d="M12 4h.01"/><path d="M17 4h.01"/></svg>
+              Cumpleaños
+            </button>
+            {filtroExtra === "cumpleanos_mes" && (
+              <select
+                className="input w-36 py-1 h-[34px] px-2 text-sm"
+                value={mesCumpleanos}
+                onChange={(e) => onMesCumpleanosChange(e.target.value)}
+              >
+                <option value="">Mes actual</option>
+                <option value="1">Enero</option>
+                <option value="2">Febrero</option>
+                <option value="3">Marzo</option>
+                <option value="4">Abril</option>
+                <option value="5">Mayo</option>
+                <option value="6">Junio</option>
+                <option value="7">Julio</option>
+                <option value="8">Agosto</option>
+                <option value="9">Septiembre</option>
+                <option value="10">Octubre</option>
+                <option value="11">Noviembre</option>
+                <option value="12">Diciembre</option>
+              </select>
+            )}
+          </div>
           
           <button
             onClick={() => toggleFiltroExtra("nuevos")}

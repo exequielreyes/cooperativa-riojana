@@ -7,6 +7,7 @@ interface SocioEditable {
   id: string;
   nombre: string;
   apellido: string;
+  dni: string;
   telefono: string;
   direccion: string;
   region: string;
@@ -16,6 +17,11 @@ interface SocioEditable {
   email: string;
   motivoBaja?: string | null;
   fechaNacimiento: string;
+  cuil?: string | null;
+  ocupacion?: string | null;
+  barrio?: string | null;
+  entrecalles?: string | null;
+  fechaing?: string | null;
 }
 
 export function EditarSocioForm({ socio }: { socio: SocioEditable }) {
@@ -38,13 +44,19 @@ export function EditarSocioForm({ socio }: { socio: SocioEditable }) {
     const payload = {
       nombre: formData.get("nombre"),
       apellido: formData.get("apellido"),
+      dni: formData.get("dni"),
       telefono: formData.get("telefono"),
       direccion: formData.get("direccion"),
       region: formData.get("region"),
+      barrio: formData.get("barrio"),
+      entrecalles: formData.get("entrecalles"),
+      cuil: formData.get("cuil"),
+      ocupacion: formData.get("ocupacion"),
+      fechaing: formData.get("fechaing") ? `${formData.get("fechaing")}T00:00:00.000Z` : null,
       tipoMiembro: formData.get("tipoMiembro"),
       estado: formData.get("estado"),
       motivoBaja: formData.get("estado") === "INACTIVO" ? formData.get("motivoBaja") : null,
-      fechaNacimiento: formData.get("fechaNacimiento") ? new Date(formData.get("fechaNacimiento") as string).toISOString() : null,
+      fechaNacimiento: formData.get("fechaNacimiento") ? `${formData.get("fechaNacimiento")}T00:00:00.000Z` : null,
     };
 
     const res = await fetch(`/api/socios/${socio.id}`, {
@@ -114,41 +126,95 @@ export function EditarSocioForm({ socio }: { socio: SocioEditable }) {
       <div className="card">
         <p className="mb-4 font-medium text-primary-dark">Información Personal</p>
         <div className="grid gap-4 sm:grid-cols-2">
-          <input className="input" name="nombre" defaultValue={socio.nombre} placeholder="Nombre" required />
-          <input className="input" name="apellido" defaultValue={socio.apellido} placeholder="Apellidos" required />
-          <input className="input bg-surface-muted" value={socio.email} disabled />
-          <input className="input bg-surface-muted" value={socio.idCooperativa} disabled />
-          <input className="input" type="date" name="fechaNacimiento" defaultValue={socio.fechaNacimiento} placeholder="Fecha de Nacimiento" />
+          <div>
+            <label className="mb-1 block text-sm text-gray-500">Nombre</label>
+            <input className="input" name="nombre" defaultValue={socio.nombre} required />
+          </div>
+          <div>
+            <label className="mb-1 block text-sm text-gray-500">Apellidos</label>
+            <input className="input" name="apellido" defaultValue={socio.apellido} required />
+          </div>
+          <div>
+            <label className="mb-1 block text-sm text-gray-500">Correo Electrónico</label>
+            <input className="input bg-surface-muted" value={socio.email} disabled />
+          </div>
+          <div>
+            <label className="mb-1 block text-sm text-gray-500">Nº Socio</label>
+            <input className="input bg-surface-muted" value={socio.idCooperativa} disabled />
+          </div>
+          <div>
+            <label className="mb-1 block text-sm text-gray-500">DNI / NIE</label>
+            <input className="input" name="dni" defaultValue={socio.dni} required />
+          </div>
+          <div>
+            <label className="mb-1 block text-sm text-gray-500">CUIL (Opcional)</label>
+            <input className="input" name="cuil" defaultValue={socio.cuil || ""} />
+          </div>
+          <div>
+            <label className="mb-1 block text-sm text-gray-500">Fecha de nacimiento</label>
+            <input className="input" type="date" name="fechaNacimiento" defaultValue={socio.fechaNacimiento} />
+          </div>
+          <div>
+            <label className="mb-1 block text-sm text-gray-500">Ocupación (Opcional)</label>
+            <input className="input" name="ocupacion" defaultValue={socio.ocupacion || ""} />
+          </div>
         </div>
       </div>
 
       <div className="card">
         <p className="mb-4 font-medium text-primary-dark">Detalles de Contacto</p>
         <div className="grid gap-4 sm:grid-cols-2">
-          <input className="input" name="telefono" defaultValue={socio.telefono} placeholder="Teléfono" />
-          <select className="input" name="region" defaultValue={socio.region}>
-            <option value="">Seleccione una región</option>
-           <option value="Zona Sur">Zona Sur</option>
-            <option value="Zona Norte">Zona Norte</option>
-            <option value="Zona Este">Zona Este</option>
-            <option value="Zona Oeste">Zona Oeste</option>
-          </select>
+          <div>
+            <label className="mb-1 block text-sm text-gray-500">Teléfono</label>
+            <input className="input" name="telefono" defaultValue={socio.telefono} />
+          </div>
+          <div>
+            <label className="mb-1 block text-sm text-gray-500">Región</label>
+            <select className="input" name="region" defaultValue={socio.region}>
+              <option value="">Seleccione una región</option>
+              <option value="Zona Sur">Zona Sur</option>
+              <option value="Zona Norte">Zona Norte</option>
+              <option value="Zona Este">Zona Este</option>
+              <option value="Zona Oeste">Zona Oeste</option>
+            </select>
+          </div>
+          <div>
+            <label className="mb-1 block text-sm text-gray-500">Calle (Nombre de la calle)</label>
+            <input className="input" name="direccion" defaultValue={socio.direccion} />
+          </div>
+          <div>
+            <label className="mb-1 block text-sm text-gray-500">Entre calles (Opcional)</label>
+            <input className="input" name="entrecalles" defaultValue={socio.entrecalles || ""} />
+          </div>
+          <div>
+            <label className="mb-1 block text-sm text-gray-500">Barrio</label>
+            <input className="input" name="barrio" defaultValue={socio.barrio || ""} />
+          </div>
         </div>
-        <input className="input mt-4" name="direccion" defaultValue={socio.direccion} placeholder="Dirección Completa" />
       </div>
 
       <div className="card">
         <p className="mb-4 font-medium text-primary-dark">Datos de la Cooperativa</p>
-        <div className="grid gap-4 sm:grid-cols-2">
-          <select className="input" name="tipoMiembro" defaultValue={socio.tipoMiembro}>
-            <option value="PRODUCTOR">Productor</option>
-            <option value="ADHERENTE">Adherente</option>
-            <option value="HONORARIO">Honorario</option>
-          </select>
-          <select className="input" name="estado" value={estadoActual} onChange={(e) => setEstadoActual(e.target.value)}>
-            <option value="ACTIVO">Activo</option>
-            <option value="INACTIVO">Inactivo</option>
-          </select>
+        <div className="grid gap-4 sm:grid-cols-3">
+          <div>
+            <label className="mb-1 block text-sm text-gray-500">Fecha de ingreso</label>
+            <input className="input" type="date" name="fechaing" defaultValue={socio.fechaing || ""} />
+          </div>
+          <div>
+            <label className="mb-1 block text-sm text-gray-500">Tipo de miembro</label>
+            <select className="input" name="tipoMiembro" defaultValue={socio.tipoMiembro}>
+              <option value="PRODUCTOR">Productor</option>
+              <option value="ADHERENTE">Adherente</option>
+              <option value="HONORARIO">Honorario</option>
+            </select>
+          </div>
+          <div>
+            <label className="mb-1 block text-sm text-gray-500">Estado</label>
+            <select className="input" name="estado" value={estadoActual} onChange={(e) => setEstadoActual(e.target.value)}>
+              <option value="ACTIVO">Activo</option>
+              <option value="INACTIVO">Inactivo</option>
+            </select>
+          </div>
         </div>
         {estadoActual === "INACTIVO" && (
           <div className="mt-4">

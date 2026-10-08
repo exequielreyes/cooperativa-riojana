@@ -1,6 +1,3 @@
-// Prisma schema - Cooperativa Riojana
-// Ejecutar: npx prisma migrate dev --name init
-
 generator client {
   provider = "prisma-client-js"
 }
@@ -8,6 +5,312 @@ generator client {
 datasource db {
   provider = "mysql"
   url      = env("DATABASE_URL")
+}
+
+model Usuario {
+  id               String               @id @default(cuid())
+  email            String               @unique
+  passwordHash     String
+  rol              RolUsuario           @default(SOCIO)
+  activo           Boolean              @default(true)
+  createdAt        DateTime             @default(now())
+  updatedAt        DateTime             @updatedAt
+  nombre           String?
+  noticias         Noticia[]            @relation("AutorNoticia")
+  pagosValidados   Pago[]               @relation("ValidadorPago")
+  resetTokens      PasswordResetToken[]
+  socio            Socio?
+  talleresDictados Taller[]             @relation("ProfesorTaller")
+
+  @@map("usuarios")
+}
+
+model Socio {
+  id              String              @id @default(cuid())
+  usuarioId       String              @unique
+  nombre          String
+  apellido        String
+  dni             String              @unique
+  fechaNacimiento DateTime?
+  telefono        String?
+  email           String
+  direccion       String?
+  region          String?
+  idCooperativa   String              @unique
+  tipoMiembro     TipoMiembro         @default(PRODUCTOR)
+  estado          EstadoSocio         @default(PENDIENTE)
+  fotoUrl         String?
+  createdAt       DateTime            @default(now())
+  updatedAt       DateTime            @updatedAt
+  moodleUserId    Int?
+  motivoBaja      String?
+  entrecalles     String              @default("") @db.VarChar(50)
+  barrio          String              @default("") @db.VarChar(50)
+  ocupacion       String              @default("") @db.VarChar(40)
+  cuil            String              @default("") @db.VarChar(15)
+  fechaing        DateTime            @default(now())
+  fechaBaja       DateTime?
+  cuotasCapital   Int                 @default(1)
+  montoCapital    Decimal?            @db.Decimal(10, 2)
+  cuotas          Cuota[]
+  grupoFamiliar   GrupoFamiliar[]
+  inscripciones   InscripcionTaller[]
+  notificaciones  Notificacion[]
+  pagos           Pago[]
+  usuario         Usuario             @relation(fields: [usuarioId], references: [id])
+
+  @@index([region])
+  @@index([estado])
+  @@map("socios")
+}
+
+model GrupoFamiliar {
+  id              String    @id @default(cuid())
+  socioId         String
+  nombre          String
+  apellido        String
+  dni             String?
+  parentesco      String
+  fechaNacimiento DateTime?
+  email           String?
+  telefono        String?
+  createdAt       DateTime  @default(now())
+  socio           Socio     @relation(fields: [socioId], references: [id], onDelete: Cascade)
+
+  @@index([socioId])
+  @@map("grupo_familiar")
+}
+
+model ConfiguracionCooperativa {
+  id                 String   @id @default("singleton")
+  montoCuotaActual   Decimal  @default(12450.00) @db.Decimal(10, 2)
+  cbu                String?
+  alias              String?
+  updatedAt          DateTime @updatedAt
+  montoCapitalActual Decimal  @default(50000.00) @db.Decimal(10, 2)
+
+  @@map("configuracion_cooperativa")
+}
+
+model ChatbotRespuesta {
+  id            String   @id @default(cuid())
+  pregunta      String?
+  palabrasClave String   @db.Text
+  respuesta     String   @db.Text
+  link          String?
+  linkTexto     String?
+  orden         Int      @default(0)
+  activa        Boolean  @default(true)
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  @@map("chatbot_respuestas")
+}
+
+model Cuota {
+  id               String      @id @default(cuid())
+  socioId          String
+  periodo          String
+  concepto         String      @default("Cuota Social")
+  monto            Decimal     @db.Decimal(10, 2)
+  fechaVencimiento DateTime
+  estado           EstadoCuota @default(PENDIENTE)
+  createdAt        DateTime    @default(now())
+  socio            Socio       @relation(fields: [socioId], references: [id])
+  pagos            Pago[]
+
+  @@index([socioId, estado])
+  @@map("cuotas")
+}
+
+model Pago {
+  id               String               @id @default(cuid())
+  cuotaId          String
+  socioId          String
+  monto            Decimal              @db.Decimal(10, 2)
+  metodo           MetodoPago
+  comprobanteUrl   String?
+  estadoValidacion EstadoValidacionPago @default(PENDIENTE_REVISION)
+  fechaPago        DateTime             @default(now())
+  validadoPorId    String?
+  fechaValidacion  DateTime?
+  notaRechazo      String?
+  cuota            Cuota                @relation(fields: [cuotaId], references: [id])
+  socio            Socio                @relation(fields: [socioId], references: [id])
+  validadoPor      Usuario?             @relation("ValidadorPago", fields: [validadoPorId], references: [id])
+
+  @@index([socioId])
+  @@index([estadoValidacion])
+  @@index([cuotaId])
+  @@index([validadoPorId], map: "pagos_validadoPorId_fkey")
+  @@map("pagos")
+}
+
+model Taller {
+  id             String              @id @default(cuid())
+  titulo         String
+  slug           String              @unique
+  descripcion    String              @db.Text
+  categoria      String
+  instructor     String?
+  ubicacion      String?
+  modalidad      ModalidadTaller     @default(PRESENCIAL)
+  fecha          DateTime
+  horaInicio     String
+  horaFin        String?
+  cuposTotales   Int
+  imagenUrl      String?
+  requisitos     String?             @db.Text
+  queAprenderas  String?             @db.Text
+  materialUrl    String?
+  estado         String              @default("ACTIVO")
+  createdAt      DateTime            @default(now())
+  updatedAt      DateTime            @updatedAt
+  moodleCourseId Int?
+  descuento      Int?
+  esPago         Boolean             @default(false)
+  precio         Decimal?            @db.Decimal(10, 2)
+  profesorId     String?
+  contenidos     ContenidoTaller[]
+  inscripciones  InscripcionTaller[]
+  profesor       Usuario?            @relation("ProfesorTaller", fields: [profesorId], references: [id])
+
+  @@index([fecha])
+  @@index([profesorId])
+  @@map("talleres")
+}
+
+model InscripcionTaller {
+  id               String            @id @default(cuid())
+  tallerId         String
+  socioId          String
+  estado           EstadoInscripcion @default(PENDIENTE)
+  observaciones    String?
+  fechaInscripcion DateTime          @default(now())
+  comprobanteUrl   String?
+  socio            Socio             @relation(fields: [socioId], references: [id])
+  taller           Taller            @relation(fields: [tallerId], references: [id])
+
+  @@unique([tallerId, socioId])
+  @@index([socioId], map: "inscripciones_talleres_socioId_fkey")
+  @@map("inscripciones_talleres")
+}
+
+model PreguntaFrecuente {
+  id        String   @id @default(cuid())
+  pregunta  String
+  respuesta String   @db.Text
+  orden     Int      @default(0)
+  activa    Boolean  @default(true)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@map("preguntas_frecuentes")
+}
+
+model Noticia {
+  id               String             @id @default(cuid())
+  titulo           String
+  slug             String             @unique
+  contenido        String             @db.Text
+  categoria        String
+  imagenUrl        String?
+  estado           EstadoContenido    @default(BORRADOR)
+  autorId          String
+  fechaPublicacion DateTime?
+  createdAt        DateTime           @default(now())
+  updatedAt        DateTime           @updatedAt
+  redesSociales    NoticiaRedSocial[]
+  autor            Usuario            @relation("AutorNoticia", fields: [autorId], references: [id])
+
+  @@index([estado])
+  @@index([autorId], map: "noticias_autorId_fkey")
+  @@map("noticias")
+}
+
+model NoticiaRedSocial {
+  id                String               @id @default(cuid())
+  noticiaId         String
+  redSocial         RedSocial
+  estadoPublicacion EstadoPublicacionRed @default(PENDIENTE)
+  urlPublicacion    String?
+  fechaPublicacion  DateTime?
+  noticia           Noticia              @relation(fields: [noticiaId], references: [id], onDelete: Cascade)
+
+  @@unique([noticiaId, redSocial])
+  @@map("noticia_redes_sociales")
+}
+
+model ContenidoTaller {
+  id          String              @id @default(cuid())
+  tallerId    String
+  titulo      String
+  descripcion String?             @db.Text
+  tipo        TipoContenidoTaller @default(DOCUMENTO)
+  url         String
+  orden       Int                 @default(0)
+  createdAt   DateTime            @default(now())
+  taller      Taller              @relation(fields: [tallerId], references: [id], onDelete: Cascade)
+
+  @@index([tallerId])
+  @@map("contenidos_taller")
+}
+
+model ContenidoNosotros {
+  id                    String   @id @default("singleton")
+  heroBadge             String   @db.Text
+  heroTitulo            String   @db.Text
+  heroDescripcion       String   @db.Text
+  heroBotonTexto        String   @db.Text
+  heroImagenUrl         String?
+  textoMision           String   @db.Text
+  textoVision           String   @db.Text
+  valores               Json
+  origenesLabel         String   @db.Text
+  origenesTitulo        String   @db.Text
+  origenesParrafo1      String   @db.Text
+  origenesParrafo2      String   @db.Text
+  origenesParrafo3      String   @db.Text
+  origenesImagenUrl     String?
+  origenesBadgeNumero   String   @db.Text
+  origenesBadgeTexto    String   @db.Text
+  origenesHito1Titulo   String   @db.Text
+  origenesHito1Texto    String   @db.Text
+  origenesHito2Titulo   String   @db.Text
+  origenesHito2Texto    String   @db.Text
+  compromisoTitulo      String   @db.Text
+  compromisoDescripcion String   @db.Text
+  iniciativas           Json
+  updatedAt             DateTime @updatedAt
+
+  @@map("contenido_nosotros")
+}
+
+model PasswordResetToken {
+  id        String    @id @default(cuid())
+  usuarioId String
+  tokenHash String    @unique
+  expiresAt DateTime
+  usedAt    DateTime?
+  createdAt DateTime  @default(now())
+  usuario   Usuario   @relation(fields: [usuarioId], references: [id], onDelete: Cascade)
+
+  @@index([usuarioId])
+  @@map("password_reset_tokens")
+}
+
+model Notificacion {
+  id        String   @id @default(cuid())
+  socioId   String
+  titulo    String
+  mensaje   String   @db.Text
+  link      String?
+  leida     Boolean  @default(false)
+  createdAt DateTime @default(now())
+  socio     Socio    @relation(fields: [socioId], references: [id], onDelete: Cascade)
+
+  @@index([socioId, leida])
+  @@map("notificaciones")
 }
 
 enum RolUsuario {
@@ -77,353 +380,8 @@ enum EstadoPublicacionRed {
   ERROR
 }
 
-model Usuario {
-  id            String     @id @default(cuid())
-  nombre        String?
-  email         String     @unique
-  passwordHash  String
-  rol           RolUsuario @default(SOCIO)
-  activo        Boolean    @default(true)
-  createdAt     DateTime   @default(now())
-  updatedAt     DateTime   @updatedAt
-
-  socio         Socio?
-  noticias      Noticia[]  @relation("AutorNoticia")
-  pagosValidados Pago[]    @relation("ValidadorPago")
-  resetTokens   PasswordResetToken[]
-  talleresDictados Taller[] @relation("ProfesorTaller")
-
-  @@map("usuarios")
-}
-
-model Socio {
-  id              String      @id @default(cuid())
-  usuarioId       String      @unique
-  usuario         Usuario     @relation(fields: [usuarioId], references: [id])
-
-  nombre          String
-  apellido        String
-  dni             String      @unique
-  fechaNacimiento DateTime?
-  telefono        String?
-  email           String
-  direccion       String?
-  region          String?
-  idCooperativa   String      @unique // ej: CR-2024-0081
-  tipoMiembro     TipoMiembro @default(PRODUCTOR)
-  estado          EstadoSocio @default(PENDIENTE)
-  motivoBaja      String?
-  fotoUrl         String?
-  moodleUserId    Int?        // id numerico del usuario en Moodle (cache, evita recrearlo)
-  
-  cuotasCapital   Int         @default(1)
-  montoCapital    Decimal?    @db.Decimal(10, 2)
-
-  createdAt       DateTime    @default(now())
-  updatedAt       DateTime    @updatedAt
-
-  grupoFamiliar     GrupoFamiliar[]
-  cuotas            Cuota[]
-  pagos             Pago[]
-  inscripciones     InscripcionTaller[]
-  notificaciones    Notificacion[]
-
-  @@map("socios")
-  @@index([region])
-  @@index([estado])
-}
-
-model GrupoFamiliar {
-  id              String    @id @default(cuid())
-  socioId         String
-  socio           Socio     @relation(fields: [socioId], references: [id], onDelete: Cascade)
-
-  nombre          String
-  apellido        String
-  dni             String?
-  parentesco      String    // ej: "Cónyuge", "Hijo/a"
-  fechaNacimiento DateTime?
-  email           String?
-  telefono        String?
-
-  createdAt       DateTime  @default(now())
-
-  @@map("grupo_familiar")
-  @@index([socioId])
-}
-
-// Configuración general de la cooperativa (fila única, id fijo "singleton")
-model ConfiguracionCooperativa {
-  id                String   @id @default("singleton")
-  montoCuotaActual  Decimal  @default(12450) @db.Decimal(10, 2)
-  montoCapitalActual Decimal @default(50000) @db.Decimal(10, 2)
-  cbu               String?
-  alias             String?
-  updatedAt         DateTime @updatedAt
-
-  @@map("configuracion_cooperativa")
-}
-
-
-
-// Respuestas configurables del chatbot: si el mensaje del usuario contiene
-// alguna de las palabras clave, se le ofrece esta respuesta.
-model ChatbotRespuesta {
-  id            String   @id @default(cuid())
-  pregunta      String?
-  palabrasClave String   @db.Text // separadas por coma, ej: "horario, atencion, abren"
-  respuesta     String   @db.Text
-  link          String?  // link opcional al que se puede ir desde la respuesta (ej: /talleres)
-  linkTexto     String?  // texto del botón del link, ej: "Ver talleres disponibles →"
-  orden         Int      @default(0)
-  activa        Boolean  @default(true)
-  createdAt     DateTime @default(now())
-  updatedAt     DateTime @updatedAt
-
-  @@map("chatbot_respuestas")
-}
-
-
-model Cuota {
-  id                String      @id @default(cuid())
-  socioId           String
-  socio             Socio       @relation(fields: [socioId], references: [id])
-
-  periodo           String      // ej: "Marzo 2024"
-  concepto          String      @default("Cuota Social")
-  monto             Decimal     @db.Decimal(10, 2)
-  fechaVencimiento  DateTime
-  estado            EstadoCuota @default(PENDIENTE)
-
-  pagos              Pago[]
-
-  createdAt         DateTime    @default(now())
-
-  @@map("cuotas")
-  @@index([socioId, estado])
-}
-
-model Pago {
-  id                  String                @id @default(cuid())
-  cuotaId             String                
-  cuota               Cuota                 @relation(fields: [cuotaId], references: [id])
-  socioId             String
-  socio               Socio                 @relation(fields: [socioId], references: [id])
-
-  monto               Decimal               @db.Decimal(10, 2)
-  metodo              MetodoPago
-  comprobanteUrl      String?
-  estadoValidacion    EstadoValidacionPago  @default(PENDIENTE_REVISION)
-  fechaPago           DateTime              @default(now())
-
-  validadoPorId       String?
-  validadoPor         Usuario?              @relation("ValidadorPago", fields: [validadoPorId], references: [id])
-  fechaValidacion     DateTime?
-  notaRechazo         String?
-
-  @@map("pagos")
-  @@index([socioId])
-  @@index([estadoValidacion])
-  @@index([cuotaId])
-}
-
-model Taller {
-  id                String           @id @default(cuid())
-  titulo            String
-  slug              String           @unique
-  descripcion       String           @db.Text
-  categoria         String           // Salud, Educación, Cultura, Social...
-  instructor        String?          // texto libre, se muestra en la parte pública (bio/nombre)
-  profesorId        String?          // relación real al Usuario con rol PROFESOR que dicta el taller
-  profesor          Usuario?         @relation("ProfesorTaller", fields: [profesorId], references: [id])
-  ubicacion         String?
-  modalidad         ModalidadTaller  @default(PRESENCIAL)
-  fecha             DateTime
-  horaInicio        String
-  horaFin           String?
-  cuposTotales       Int
-  imagenUrl         String?
-  requisitos        String?          @db.Text
-  queAprenderas     String?          @db.Text
-  materialUrl       String?
-  moodleCourseId    Int?             // id numerico del curso en Moodle (LMS)
-  estado            String           @default("ACTIVO") // ACTIVO, FINALIZADO, CANCELADO
-  esPago            Boolean          @default(false)
-  precio            Decimal?         @db.Decimal(10, 2)
-  descuento         Int?             // Porcentaje de descuento, ej: 20
-
-  createdAt         DateTime         @default(now())
-  updatedAt         DateTime         @updatedAt
-
-  inscripciones     InscripcionTaller[]
-  contenidos        ContenidoTaller[]
-
-  @@map("talleres")
-  @@index([fecha])
-  @@index([profesorId])
-}
-
-model InscripcionTaller {
-  id              String            @id @default(cuid())
-  tallerId        String
-  taller          Taller            @relation(fields: [tallerId], references: [id])
-  socioId         String
-  socio           Socio             @relation(fields: [socioId], references: [id])
-
-  estado          EstadoInscripcion @default(PENDIENTE)
-  observaciones   String?
-  comprobanteUrl  String?
-  fechaInscripcion DateTime         @default(now())
-
-  @@map("inscripciones_talleres")
-  @@unique([tallerId, socioId])
-}
-
-
-model PreguntaFrecuente {
-  id        String   @id @default(cuid())
-  pregunta  String
-  respuesta String   @db.Text
-  orden     Int      @default(0)
-  activa    Boolean  @default(true)
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-
-  @@map("preguntas_frecuentes")
-}
-
-
-
-model Noticia {
-  id                String           @id @default(cuid())
-  titulo            String
-  slug              String           @unique
-  contenido         String           @db.Text
-  categoria         String           // Institucional, Comunidad, Comercio, Técnico...
-  imagenUrl         String?
-  estado            EstadoContenido  @default(BORRADOR)
-
-  autorId           String
-  autor             Usuario          @relation("AutorNoticia", fields: [autorId], references: [id])
-
-  fechaPublicacion  DateTime?
-  createdAt         DateTime         @default(now())
-  updatedAt         DateTime         @updatedAt
-
-  redesSociales     NoticiaRedSocial[]
-
-  @@map("noticias")
-  @@index([estado])
-}
-
-// Selección de redes sociales a las que se publica cada noticia
-// (TikTok, YouTube, Instagram, LinkedIn)
-model NoticiaRedSocial {
-  id                    String                @id @default(cuid())
-  noticiaId             String
-  noticia               Noticia               @relation(fields: [noticiaId], references: [id], onDelete: Cascade)
-  redSocial             RedSocial
-  estadoPublicacion     EstadoPublicacionRed  @default(PENDIENTE)
-  urlPublicacion        String?
-  fechaPublicacion      DateTime?
-
-  @@map("noticia_redes_sociales")
-  @@unique([noticiaId, redSocial])
-}
-
-// Contenido / material didáctico que el profesor sube para un taller
-// (mini-LMS nativo: documentos, videos embebidos o enlaces externos)
-model ContenidoTaller {
-  id          String              @id @default(cuid())
-  tallerId    String
-  taller      Taller              @relation(fields: [tallerId], references: [id], onDelete: Cascade)
-
-  titulo      String
-  descripcion String?             @db.Text
-  tipo        TipoContenidoTaller @default(DOCUMENTO)
-  url         String              // archivo subido (/uploads/...) o link externo (YouTube, Drive, etc.)
-  orden       Int                 @default(0)
-
-  createdAt   DateTime            @default(now())
-
-  @@map("contenidos_taller")
-  @@index([tallerId])
-}
-
 enum TipoContenidoTaller {
-  DOCUMENTO // PDF u otro archivo subido
-  VIDEO     // link embebible (YouTube, Vimeo)
-  ENLACE    // link externo genérico (Drive, sitio externo, etc.)
-}
-
-// Contenido editable de la página pública "/quienes-somos" (Acerca de
-// Nosotros). Registro único (patrón singleton, igual que
-// ConfiguracionCooperativa) que el admin edita desde
-// /admin/secciones/acerca-de-nosotros.
-model ContenidoNosotros {
-  id                String   @id @default("singleton")
-
-  // --- Hero ---
-  heroBadge         String   @db.Text
-  heroTitulo        String   @db.Text
-  heroDescripcion   String   @db.Text
-  heroBotonTexto    String   @db.Text
-  heroImagenUrl     String?
-
-  // --- Misión / Visión / Valores ---
-  textoMision       String   @db.Text
-  textoVision       String   @db.Text
-  valores           Json     // [{ titulo, descripcion }] x4 (orden fijo, ligado a un ícono cada uno)
-
-  // --- Nuestros Orígenes ---
-  origenesLabel       String @db.Text
-  origenesTitulo      String @db.Text
-  origenesParrafo1    String @db.Text
-  origenesParrafo2    String @db.Text
-  origenesParrafo3    String @db.Text
-  origenesImagenUrl   String?
-  origenesBadgeNumero String @db.Text
-  origenesBadgeTexto  String @db.Text
-  origenesHito1Titulo String @db.Text
-  origenesHito1Texto  String @db.Text
-  origenesHito2Titulo String @db.Text
-  origenesHito2Texto  String @db.Text
-
-  // --- Compromiso Social y Ambiental ---
-  compromisoTitulo      String @db.Text
-  compromisoDescripcion String @db.Text
-  iniciativas            Json  // [{ titulo, descripcion, imagenUrl }] x3
-
-  updatedAt DateTime @updatedAt
-
-  @@map("contenido_nosotros")
-}
-// Tokens de un solo uso para el flujo de "¿Olvidaste tu contraseña?".
-// Guardamos el hash del token (no el token en texto plano) por seguridad:
-// si alguien accediera a la base, no podría usarlos para resetear cuentas.
-model PasswordResetToken {
-  id         String    @id @default(cuid())
-  usuarioId  String
-  usuario    Usuario   @relation(fields: [usuarioId], references: [id], onDelete: Cascade)
-  tokenHash  String    @unique
-  expiresAt  DateTime
-  usedAt     DateTime?
-  createdAt  DateTime  @default(now())
-
-  @@map("password_reset_tokens")
-  @@index([usuarioId])
-}
-
-model Notificacion {
-  id          String   @id @default(cuid())
-  socioId     String
-  socio       Socio    @relation(fields: [socioId], references: [id], onDelete: Cascade)
-  titulo      String
-  mensaje     String   @db.Text
-  link        String?
-  leida       Boolean  @default(false)
-  createdAt   DateTime @default(now())
-
-  @@map("notificaciones")
-  @@index([socioId, leida])
+  DOCUMENTO
+  VIDEO
+  ENLACE
 }

@@ -21,13 +21,14 @@ const PAGE_SIZE = 7;
 export default async function AdminSociosPage({
   searchParams,
 }: {
-  searchParams: { q?: string; region?: string; estado?: string; page?: string; edad?: string; filtroExtra?: string };
+  searchParams: { q?: string; region?: string; estado?: string; page?: string; edad?: string; filtroExtra?: string; mesCumpleanos?: string };
 }) {
   const q = searchParams.q ?? "";
   const region = searchParams.region ?? "";
   const estado = searchParams.estado ?? "";
   const edad = searchParams.edad ?? "";
   const filtroExtra = searchParams.filtroExtra ?? "";
+  const mesCumpleanos = searchParams.mesCumpleanos ?? "";
   const page = Math.max(1, parseInt(searchParams.page ?? "1", 10) || 1);
 
   let whereEstado: any = undefined;
@@ -63,7 +64,8 @@ export default async function AdminSociosPage({
     hace30dias.setDate(hace30dias.getDate() - 30);
     whereFiltroExtra = { createdAt: { gte: hace30dias } };
   } else if (filtroExtra === "cumpleanos_mes") {
-    const results = await prisma.$queryRaw<{id: string}[]>`SELECT id FROM socios WHERE MONTH(fechaNacimiento) = MONTH(CURRENT_DATE())`;
+    const mes = mesCumpleanos ? parseInt(mesCumpleanos, 10) : new Date().getMonth() + 1;
+    const results = await prisma.$queryRaw<{id: string}[]>`SELECT id FROM socios WHERE MONTH(fechaNacimiento) = ${mes}`;
     whereFiltroExtra = { id: { in: results.map(r => r.id) } };
   }
 
@@ -123,46 +125,78 @@ export default async function AdminSociosPage({
       <div className="card overflow-x-auto p-0">
         <table className="w-full text-sm">
           <thead>
-            <tr className="border-b border-surface-border text-left text-xs text-gray-400">
-              <th className="px-6 py-3 font-normal">Nombre del Socio</th>
-              <th className="px-6 py-3 font-normal">ID Cooperativa</th>
-              <th className="px-6 py-3 font-normal">Región</th>
-              <th className="px-6 py-3 font-normal">Estado</th>
-              <th className="px-6 py-3 font-normal">Acciones</th>
-            </tr>
+            {estado.startsWith("INACTIVO") ? (
+              <tr className="border-b border-surface-border text-left text-xs text-gray-400">
+                <th className="px-6 py-3 font-normal">Apellido y Nombre</th>
+                <th className="px-6 py-3 font-normal">DNI</th>
+                <th className="px-6 py-3 font-normal">Fecha de Ingreso</th>
+                <th className="px-6 py-3 font-normal">Fecha de Egreso</th>
+                <th className="px-6 py-3 font-normal">Motivo de Egreso</th>
+                <th className="px-6 py-3 font-normal">Acciones</th>
+              </tr>
+            ) : (
+              <tr className="border-b border-surface-border text-left text-xs text-gray-400">
+                <th className="px-6 py-3 font-normal">N° Socio</th>
+                <th className="px-6 py-3 font-normal">Nombre del Socio</th>
+                <th className="px-6 py-3 font-normal">Teléfono</th>
+                <th className="px-6 py-3 font-normal">Fecha de Ingreso</th>
+                <th className="px-6 py-3 font-normal">Estado</th>
+                <th className="px-6 py-3 font-normal">Acciones</th>
+              </tr>
+            )}
           </thead>
           <tbody>
             {socios.length === 0 && (
               <tr>
-                <td colSpan={5} className="px-6 py-8 text-center text-sm text-gray-400">
+                <td colSpan={6} className="px-6 py-8 text-center text-sm text-gray-400">
                   No se encontraron socios con esos filtros.
                 </td>
               </tr>
             )}
             {socios.map((socio) => (
               <tr key={socio.id} className="border-b border-surface-border last:border-0">
-                <td className="px-6 py-3">
-                  <Link href={`/admin/socios/${socio.id}`} className="font-medium text-primary-dark hover:underline">
-                    {socio.nombre} {socio.apellido}
-                  </Link>
-                  <p className="text-xs text-gray-400">{socio.email}</p>
-                </td>
-                <td className="px-6 py-3">{socio.idCooperativa}</td>
-                <td className="px-6 py-3">{socio.region ?? "—"}</td>
-                <td className="px-6 py-3">
-                  <StatusBadge 
-                    label={
-                      socio.estado === "INACTIVO" && socio.motivoBaja === "FALLECIMIENTO" ? "Inactivo (Fallecido)" :
-                      socio.estado === "INACTIVO" && socio.motivoBaja === "FALTA_PAGO" ? "Inactivo (Falta de Pago)" :
-                      socio.estado === "INACTIVO" && socio.motivoBaja === "BAJA_VOLUNTARIA" ? "Inactivo (Voluntaria)" :
-                      estadoLabel[socio.estado]
-                    } 
-                    tone={estadoTone[socio.estado]} 
-                  />
-                </td>
-                <td className="px-6 py-3">
-                  <AccionesSocio socioId={socio.id} estado={socio.estado} email={socio.email} nombre={`${socio.nombre} ${socio.apellido}`} />
-                </td>
+                {estado.startsWith("INACTIVO") ? (
+                  <>
+                    <td className="px-6 py-3">
+                      <Link href={`/admin/socios/${socio.id}`} className="font-medium text-primary-dark hover:underline">
+                        {socio.apellido}, {socio.nombre}
+                      </Link>
+                    </td>
+                    <td className="px-6 py-3">{socio.dni}</td>
+                    <td className="px-6 py-3">{socio.fechaing ? new Date(socio.fechaing).toLocaleDateString("es-AR", { timeZone: "UTC" }) : "—"}</td>
+                    <td className="px-6 py-3">{socio.fechaBaja ? new Date(socio.fechaBaja).toLocaleDateString("es-AR", { timeZone: "UTC" }) : "—"}</td>
+                    <td className="px-6 py-3">
+                      {socio.motivoBaja === "FALLECIMIENTO" ? "Fallecimiento" :
+                       socio.motivoBaja === "FALTA_PAGO" ? "Falta de Pago" :
+                       socio.motivoBaja === "BAJA_VOLUNTARIA" ? "Baja Voluntaria" :
+                       socio.motivoBaja || "—"}
+                    </td>
+                    <td className="px-6 py-3">
+                      <AccionesSocio socioId={socio.id} estado={socio.estado} email={socio.email} nombre={`${socio.nombre} ${socio.apellido}`} />
+                    </td>
+                  </>
+                ) : (
+                  <>
+                    <td className="px-6 py-3">{socio.idCooperativa}</td>
+                    <td className="px-6 py-3">
+                      <Link href={`/admin/socios/${socio.id}`} className="font-medium text-primary-dark hover:underline">
+                        {socio.nombre} {socio.apellido}
+                      </Link>
+                      <p className="text-xs text-gray-400">{socio.email}</p>
+                    </td>
+                    <td className="px-6 py-3">{socio.telefono ?? "—"}</td>
+                    <td className="px-6 py-3">{socio.fechaing ? new Date(socio.fechaing).toLocaleDateString("es-AR", { timeZone: "UTC" }) : "—"}</td>
+                    <td className="px-6 py-3">
+                      <StatusBadge 
+                        label={estadoLabel[socio.estado]} 
+                        tone={estadoTone[socio.estado]} 
+                      />
+                    </td>
+                    <td className="px-6 py-3">
+                      <AccionesSocio socioId={socio.id} estado={socio.estado} email={socio.email} nombre={`${socio.nombre} ${socio.apellido}`} />
+                    </td>
+                  </>
+                )}
               </tr>
             ))}
           </tbody>

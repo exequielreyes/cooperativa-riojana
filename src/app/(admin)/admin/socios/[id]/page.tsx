@@ -63,14 +63,34 @@ export default async function PerfilSocioAdminPage({ params }: { params: { id: s
         </div>
       </div>
 
-      <div className="mb-6 grid gap-4 sm:grid-cols-3">
+      <div className="mb-6 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
         <div className="card">
           <p className="text-xs text-gray-400">Teléfono</p>
           <p className="text-sm font-medium text-primary-dark">{socio.telefono ?? "—"}</p>
         </div>
         <div className="card">
-          <p className="text-xs text-gray-400">Región</p>
-          <p className="text-sm font-medium text-primary-dark">{socio.region ?? "—"}</p>
+          <p className="text-xs text-gray-400">DNI / CUIL</p>
+          <p className="text-sm font-medium text-primary-dark">{socio.dni} {socio.cuil ? `/ ${socio.cuil}` : ""}</p>
+        </div>
+        <div className="card">
+          <p className="text-xs text-gray-400">Ocupación</p>
+          <p className="text-sm font-medium text-primary-dark">{socio.ocupacion || "—"}</p>
+        </div>
+        <div className="card">
+          <p className="text-xs text-gray-400">Fecha de Nacimiento</p>
+          <p className="text-sm font-medium text-primary-dark">{socio.fechaNacimiento ? new Date(socio.fechaNacimiento).toLocaleDateString("es-AR", { timeZone: "UTC" }) : "—"}</p>
+        </div>
+        <div className="card">
+          <p className="text-xs text-gray-400">Región / Barrio</p>
+          <p className="text-sm font-medium text-primary-dark">{socio.region ?? "—"}{socio.barrio ? ` (${socio.barrio})` : ""}</p>
+        </div>
+        <div className="card">
+          <p className="text-xs text-gray-400">Entre calles</p>
+          <p className="text-sm font-medium text-primary-dark">{socio.entrecalles || "—"}</p>
+        </div>
+        <div className="card">
+          <p className="text-xs text-gray-400">Fecha de Ingreso</p>
+          <p className="text-sm font-medium text-primary-dark">{socio.fechaing ? new Date(socio.fechaing).toLocaleDateString("es-AR", { timeZone: "UTC" }) : "—"}</p>
         </div>
         <div className="card">
           <p className="text-xs text-gray-400">Deuda Total</p>
