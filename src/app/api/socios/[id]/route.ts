@@ -9,6 +9,7 @@ import { enviarEmailCredenciales } from "@/lib/email";
 const editarSocioSchema = z.object({
   nombre: z.string().min(1).optional(),
   apellido: z.string().min(1).optional(),
+  dni: z.string().min(1).optional(),
   telefono: z.string().optional(),
   direccion: z.string().optional(),
   region: z.string().optional(),
@@ -16,6 +17,11 @@ const editarSocioSchema = z.object({
   estado: z.enum(["ACTIVO", "PENDIENTE", "INACTIVO"]).optional(),
   motivoBaja: z.string().nullable().optional(),
   fechaNacimiento: z.string().nullable().optional(),
+  cuil: z.string().nullable().optional(),
+  ocupacion: z.string().nullable().optional(),
+  barrio: z.string().nullable().optional(),
+  entrecalles: z.string().nullable().optional(),
+  fechaing: z.string().nullable().optional(),
 });
 
 export async function GET(_req: NextRequest, { params }: { params: { id: string } }) {
@@ -102,15 +108,25 @@ export async function PATCH(request: NextRequest, { params }: { params: { id: st
   }
 
   // Dar de baja desactiva también el acceso a la cuenta; reactivar lo restaura.
+  const dataToUpdate: any = { ...parsed.data };
   if (parsed.data.estado === "INACTIVO") {
     await prisma.usuario.update({ where: { id: socioActual.usuarioId }, data: { activo: false } });
-  } else if (parsed.data.estado === "ACTIVO") {
-    await prisma.usuario.update({ where: { id: socioActual.usuarioId }, data: { activo: true } });
+    if (socioActual.estado !== "INACTIVO") {
+      dataToUpdate.fechaBaja = new Date();
+    }
+  } else if (parsed.data.estado === "ACTIVO" || parsed.data.estado === "PENDIENTE") {
+    if (parsed.data.estado === "ACTIVO") {
+      await prisma.usuario.update({ where: { id: socioActual.usuarioId }, data: { activo: true } });
+    }
+    dataToUpdate.fechaBaja = null;
+    dataToUpdate.motivoBaja = null;
   }
 
-  const dataToUpdate: any = { ...parsed.data };
   if (dataToUpdate.fechaNacimiento) {
     dataToUpdate.fechaNacimiento = new Date(dataToUpdate.fechaNacimiento);
+  }
+  if (dataToUpdate.fechaing) {
+    dataToUpdate.fechaing = new Date(dataToUpdate.fechaing);
   }
 
   const socio = await prisma.socio.update({

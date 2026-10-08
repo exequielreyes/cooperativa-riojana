@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
+import { FloatingInput } from "@/components/FloatingInput";
 
 export default function NuevoSocioPage() {
   const router = useRouter();
@@ -33,10 +34,16 @@ export default function NuevoSocioPage() {
       nombre: formData.get("nombre"),
       apellido: formData.get("apellido"),
       dni: formData.get("dni"),
-      fechaNacimiento: formData.get("fechaNacimiento") ? new Date(formData.get("fechaNacimiento") as string).toISOString() : null,
+      fechaNacimiento: formData.get("fechaNacimiento") ? `${formData.get("fechaNacimiento")}T00:00:00.000Z` : null,
       email: formData.get("email"),
       telefono: formData.get("telefono"),
+      direccion: formData.get("direccion"),
       region: formData.get("region"),
+      barrio: formData.get("barrio"),
+      entrecalles: formData.get("entrecalles"),
+      cuil: formData.get("cuil"),
+      ocupacion: formData.get("ocupacion"),
+      fechaing: formData.get("fechaing") ? `${formData.get("fechaing")}T00:00:00.000Z` : `${new Date().toISOString().split("T")[0]}T00:00:00.000Z`,
       tipoMiembro: formData.get("tipoMiembro"),
       estado,
       cuotasCapital,
@@ -135,40 +142,69 @@ export default function NuevoSocioPage() {
         <div className="card">
           <p className="mb-4 font-medium text-primary-dark">Información Personal</p>
           <div className="grid gap-4 sm:grid-cols-2">
-            <input className="input" name="nombre" placeholder="Nombre" required />
-            <input className="input" name="apellido" placeholder="Apellidos" required />
-            <input className="input" name="dni" placeholder="DNI / NIE" required />
-            <input className="input" type="date" name="fechaNacimiento" placeholder="Fecha de Nacimiento" required />
+            <FloatingInput label="Nombre" name="nombre" required />
+            <FloatingInput label="Apellidos" name="apellido" required />
+          </div>
+          <div className="mt-4 grid gap-4 sm:grid-cols-2">
+            <FloatingInput label="DNI / NIE" name="dni" required />
+            <FloatingInput label="CUIL (Opcional)" name="cuil" />
+          </div>
+          <div className="mt-4 grid gap-4 sm:grid-cols-2">
+            <div>
+              <label className="mb-1 block text-sm text-gray-500">Fecha de nacimiento</label>
+              <input className="input" type="date" name="fechaNacimiento" required />
+            </div>
+            <FloatingInput label="Ocupación (Opcional)" name="ocupacion" />
           </div>
         </div>
 
         <div className="card">
           <p className="mb-4 font-medium text-primary-dark">Detalles de Contacto</p>
           <div className="grid gap-4 sm:grid-cols-2">
-            <input className="input" type="email" name="email" placeholder="Correo Electrónico" required />
-            <input className="input" name="telefono" placeholder="Teléfono" />
+            <FloatingInput label="Correo Electrónico" type="email" name="email" required />
+            <FloatingInput label="Teléfono" name="telefono" />
           </div>
-          <select className="input mt-4" name="region" defaultValue="">
-            <option value="" disabled>Seleccione una región</option>
-             <option value="Zona Sur">Zona Sur</option>
-            <option value="Zona Norte">Zona Norte</option>
-            <option value="Zona Este">Zona Este</option>
-            <option value="Zona Oeste">Zona Oeste</option>
-          </select>
+          <div className="mt-4 grid gap-4 sm:grid-cols-2">
+            <FloatingInput label="Calle (Nombre de la calle)" name="direccion" required />
+            <FloatingInput label="Entre calles (Opcional)" name="entrecalles" />
+          </div>
+          <div className="mt-4 grid gap-4 sm:grid-cols-2">
+            <FloatingInput label="Barrio" name="barrio" required />
+            <div>
+              <label className="mb-1 block text-sm text-gray-500">Región</label>
+              <select className="input" name="region" defaultValue="" required>
+                <option value="" disabled>Seleccione una región</option>
+                <option value="Zona Sur">Zona Sur</option>
+                <option value="Zona Norte">Zona Norte</option>
+                <option value="Zona Este">Zona Este</option>
+                <option value="Zona Oeste">Zona Oeste</option>
+              </select>
+            </div>
+          </div>
         </div>
 
         <div className="card">
           <p className="mb-4 font-medium text-primary-dark">Datos de la Cooperativa</p>
-          <div className="grid gap-4 sm:grid-cols-2">
-            <select className="input" name="tipoMiembro" defaultValue="PRODUCTOR">
-              <option value="PRODUCTOR">Productor</option>
-              <option value="ADHERENTE">Adherente</option>
-              <option value="HONORARIO">Honorario</option>
-            </select>
-            <select className="input" name="estado" defaultValue="ACTIVO">
-              <option value="ACTIVO">Activo</option>
-              <option value="PENDIENTE">Pendiente</option>
-            </select>
+          <div className="grid gap-4 sm:grid-cols-3">
+            <div>
+              <label className="mb-1 block text-sm text-gray-500">Fecha de ingreso</label>
+              <input className="input" type="date" name="fechaing" required defaultValue={new Date().toISOString().split("T")[0]} />
+            </div>
+            <div>
+              <label className="mb-1 block text-sm text-gray-500">Tipo de miembro</label>
+              <select className="input" name="tipoMiembro" defaultValue="PRODUCTOR">
+                <option value="PRODUCTOR">Productor</option>
+                <option value="ADHERENTE">Adherente</option>
+                <option value="HONORARIO">Honorario</option>
+              </select>
+            </div>
+            <div>
+              <label className="mb-1 block text-sm text-gray-500">Estado</label>
+              <select className="input" name="estado" defaultValue="ACTIVO">
+                <option value="ACTIVO">Activo</option>
+                <option value="PENDIENTE">Pendiente</option>
+              </select>
+            </div>
           </div>
         </div>
 

@@ -16,6 +16,11 @@ const crearSocioSchema = z.object({
   estado: z.enum(["ACTIVO", "PENDIENTE"]).default("PENDIENTE"),
   cuotasCapital: z.coerce.number().min(1).default(1),
   montoCapital: z.coerce.number().optional(),
+  cuil: z.string().nullable().optional(),
+  ocupacion: z.string().nullable().optional(),
+  barrio: z.string().nullable().optional(),
+  entrecalles: z.string().nullable().optional(),
+  fechaing: z.string().nullable().optional(),
 });
 
 export async function GET() {
@@ -80,6 +85,11 @@ export async function POST(request: NextRequest) {
           idCooperativa,
           cuotasCapital: data.cuotasCapital,
           montoCapital: data.montoCapital,
+          cuil: data.cuil || "",
+          ocupacion: data.ocupacion || "",
+          barrio: data.barrio || "",
+          entrecalles: data.entrecalles || "",
+          fechaing: data.fechaing ? new Date(data.fechaing) : new Date(),
         },
       },
     },
