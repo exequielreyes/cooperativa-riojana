@@ -207,7 +207,8 @@ export function FiltrosSocios({ regiones }: { regiones: string[] }) {
           
           <button
             onClick={() => toggleEstado("")}
-            className={`flex items-center gap-1.5 rounded-full px-3 py-1.5 text-sm font-medium transition-colors ${
+            disabled={filtroExtra === "al_dia"}
+            className={`flex items-center gap-1.5 rounded-full px-3 py-1.5 text-sm font-medium transition-colors ${filtroExtra === "al_dia" ? "opacity-50 cursor-not-allowed" : ""} ${
               estado === ""
                 ? "bg-[#0f4c4c] text-white"
                 : "bg-gray-100 text-gray-600 hover:bg-gray-200"
@@ -218,7 +219,8 @@ export function FiltrosSocios({ regiones }: { regiones: string[] }) {
           
           <button
             onClick={() => toggleEstado("ACTIVO")}
-            className={`flex items-center gap-1.5 rounded-full px-3 py-1.5 text-sm font-medium transition-colors ${
+            disabled={filtroExtra === "al_dia"}
+            className={`flex items-center gap-1.5 rounded-full px-3 py-1.5 text-sm font-medium transition-colors ${filtroExtra === "al_dia" ? "opacity-50 cursor-not-allowed" : ""} ${
               estado === "ACTIVO"
                 ? "bg-green-100 text-green-700 border border-green-200"
                 : "bg-gray-100 text-gray-600 hover:bg-gray-200 border border-transparent"
@@ -230,7 +232,8 @@ export function FiltrosSocios({ regiones }: { regiones: string[] }) {
           
           <button
             onClick={() => toggleEstado("PENDIENTE")}
-            className={`flex items-center gap-1.5 rounded-full px-3 py-1.5 text-sm font-medium transition-colors ${
+            disabled={filtroExtra === "al_dia"}
+            className={`flex items-center gap-1.5 rounded-full px-3 py-1.5 text-sm font-medium transition-colors ${filtroExtra === "al_dia" ? "opacity-50 cursor-not-allowed" : ""} ${
               estado === "PENDIENTE"
                 ? "bg-yellow-100 text-yellow-700 border border-yellow-200"
                 : "bg-gray-100 text-gray-600 hover:bg-gray-200 border border-transparent"
@@ -242,7 +245,8 @@ export function FiltrosSocios({ regiones }: { regiones: string[] }) {
           
           <button
             onClick={() => toggleEstado("INACTIVO")}
-            className={`flex items-center gap-1.5 rounded-full px-3 py-1.5 text-sm font-medium transition-colors ${
+            disabled={filtroExtra === "al_dia"}
+            className={`flex items-center gap-1.5 rounded-full px-3 py-1.5 text-sm font-medium transition-colors ${filtroExtra === "al_dia" ? "opacity-50 cursor-not-allowed" : ""} ${
               estado.startsWith("INACTIVO")
                 ? "bg-gray-200 text-gray-800 border border-gray-300"
                 : "bg-gray-100 text-gray-600 hover:bg-gray-200 border border-transparent"
@@ -300,6 +304,18 @@ export function FiltrosSocios({ regiones }: { regiones: string[] }) {
           >
             <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="m12 3-1.912 5.813a2 2 0 0 1-1.275 1.275L3 12l5.813 1.912a2 2 0 0 1 1.275 1.275L12 21l1.912-5.813a2 2 0 0 1 1.275-1.275L21 12l-5.813-1.912a2 2 0 0 1-1.275-1.275L12 3Z"/><path d="M5 3v4"/><path d="M3 5h4"/></svg>
             Nuevos (30 días)
+          </button>
+          
+          <button
+            onClick={() => toggleFiltroExtra("al_dia")}
+            className={`flex items-center gap-1.5 rounded-full px-3 py-1.5 text-sm font-medium transition-colors ${
+              filtroExtra === "al_dia"
+                ? "bg-emerald-50 text-emerald-600 border border-emerald-200"
+                : "bg-white text-gray-600 border border-gray-200 hover:bg-gray-50"
+            }`}
+          >
+            <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
+            Al día
           </button>
         </div>
       </div>

@@ -1,3 +1,4 @@
+import React from "react";
 import Link from "next/link";
 import { prisma } from "@/lib/db";
 import { StatusBadge } from "@/components/ui/StatusBadge";
@@ -16,6 +17,19 @@ const estadoTone: Record<string, "success" | "warning" | "neutral"> = {
   PENDIENTE: "warning",
   INACTIVO: "neutral",
 };
+
+
+function getEdad(fecha: Date | null | undefined) {
+  if (!fecha) return "—";
+  const hoy = new Date();
+  const nac = new Date(fecha);
+  let edad = hoy.getFullYear() - nac.getFullYear();
+  const m = hoy.getMonth() - nac.getMonth();
+  if (m < 0 || (m === 0 && hoy.getDate() < nac.getDate())) {
+    edad--;
+  }
+  return isNaN(edad) ? "—" : edad;
+}
 
 const PAGE_SIZE = 7;
 
@@ -71,6 +85,17 @@ export default async function AdminSociosPage({
     // Debemos limitar este query por area actual también si usamos raw
     const results = await prisma.$queryRaw<{id: string}[]>`SELECT id FROM socios WHERE MONTH(fechaNacimiento) = ${mes} AND area = ${currentArea}`;
     whereFiltroExtra = { id: { in: results.map(r => r.id) } };
+  } else if (filtroExtra === "al_dia") {
+    const hoy = new Date();
+    whereFiltroExtra = {
+      estado: "ACTIVO",
+      cuotas: {
+        none: {
+          estado: { not: "PAGADO" },
+          fechaVencimiento: { lte: hoy },
+        }
+      }
+    };
   }
 
   const where = {
@@ -92,6 +117,15 @@ export default async function AdminSociosPage({
   const [socios, total, regiones] = await Promise.all([
     prisma.socio.findMany({
       where,
+      include: {
+        grupoFamiliar: true,
+        cuotas: {
+          where: { estado: "PAGADO" },
+          orderBy: { fechaVencimiento: "desc" },
+          take: 1,
+          include: { pagos: { orderBy: { fechaPago: "desc" }, take: 1 } },
+        },
+      },
       orderBy: { createdAt: "desc" },
       skip: (page - 1) * PAGE_SIZE,
       take: PAGE_SIZE,
@@ -130,7 +164,17 @@ export default async function AdminSociosPage({
       <div className="card overflow-x-auto p-0">
         <table className="w-full text-sm">
           <thead>
-            {estado.startsWith("INACTIVO") ? (
+            {filtroExtra === "al_dia" ? (
+              <tr className="border-b border-surface-border text-left text-xs text-gray-400">
+                <th className="px-6 py-3 font-normal">N°</th>
+                <th className="px-6 py-3 font-normal">Tipo</th>
+                <th className="px-6 py-3 font-normal">N° Socio</th>
+                <th className="px-6 py-3 font-normal">DNI</th>
+                <th className="px-6 py-3 font-normal">Apellido y Nombre</th>
+                <th className="px-6 py-3 font-normal">Últimos Pagos</th>
+                <th className="px-6 py-3 font-normal">Edad</th>
+              </tr>
+            ) : estado.startsWith("INACTIVO") ? (
               <tr className="border-b border-surface-border text-left text-xs text-gray-400">
                 <th className="px-6 py-3 font-normal">Apellido y Nombre</th>
                 <th className="px-6 py-3 font-normal">DNI</th>
@@ -153,14 +197,29 @@ export default async function AdminSociosPage({
           <tbody>
             {socios.length === 0 && (
               <tr>
-                <td colSpan={6} className="px-6 py-8 text-center text-sm text-gray-400">
+                <td colSpan={8} className="px-6 py-8 text-center text-sm text-gray-400">
                   No se encontraron socios con esos filtros.
                 </td>
               </tr>
             )}
-            {socios.map((socio) => (
-              <tr key={socio.id} className="border-b border-surface-border last:border-0">
-                {estado.startsWith("INACTIVO") ? (
+            {socios.map((socio, index) => (
+              <React.Fragment key={socio.id}>
+              <tr className="border-b border-surface-border last:border-0">
+                {filtroExtra === "al_dia" ? (
+                  <>
+                    <td className="px-6 py-3">{(page - 1) * PAGE_SIZE + index + 1}</td>
+                    <td className="px-6 py-3 font-medium text-primary-dark">Activo</td>
+                    <td className="px-6 py-3 font-bold">{socio.idCooperativa?.split('-').pop() || socio.idCooperativa}</td>
+                    <td className="px-6 py-3">{socio.dni}</td>
+                    <td className="px-6 py-3 font-bold uppercase">
+                      <Link href={`/admin/socios/${socio.id}`} className="hover:underline text-primary-dark">
+                        {socio.apellido} {socio.nombre}
+                      </Link>
+                    </td>
+                    <td className="px-6 py-3">{socio.cuotas?.[0]?.pagos?.[0]?.fechaPago ? new Date(socio.cuotas[0].pagos[0].fechaPago).toLocaleDateString("es-AR", { timeZone: "UTC" }) : "—"}</td>
+                    <td className="px-6 py-3">{getEdad(socio.fechaNacimiento as any)}</td>
+                  </>
+                ) : estado.startsWith("INACTIVO") ? (
                   <>
                     <td className="px-6 py-3">
                       <Link href={`/admin/socios/${socio.id}`} className="font-medium text-primary-dark hover:underline">
@@ -203,6 +262,24 @@ export default async function AdminSociosPage({
                   </>
                 )}
               </tr>
+              {filtroExtra === "al_dia" && socio.grupoFamiliar?.map(fam => (
+                <tr key={fam.id} className="border-b border-gray-50 bg-gray-50/20 last:border-0">
+                  <td className="px-6 py-3 text-gray-400"></td>
+                  <td className="px-6 py-3 text-gray-500">Familiar</td>
+                  <td className="px-6 py-3 text-gray-500">{socio.idCooperativa?.split('-').pop() || socio.idCooperativa}</td>
+                  <td className="px-6 py-3 text-gray-500">{fam.dni ?? "—"}</td>
+                  <td className="px-6 py-3 text-gray-500">
+                    <span className="text-gray-300 mr-2">└</span>
+                    <span className="uppercase">{fam.apellido} {fam.nombre}</span>
+                    <span className="ml-2 text-[10px] bg-gray-100 text-gray-500 px-1.5 py-0.5 rounded">
+                      ({fam.parentesco})
+                    </span>
+                  </td>
+                  <td className="px-6 py-3 text-gray-500"></td>
+                  <td className="px-6 py-3 text-gray-500">{getEdad(fam.fechaNacimiento as any)}</td>
+                </tr>
+              ))}
+              </React.Fragment>
             ))}
           </tbody>
         </table>
