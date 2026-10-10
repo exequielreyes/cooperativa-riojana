@@ -30,6 +30,15 @@ export default function NuevoSocioPage() {
 
     const formData = new FormData(e.currentTarget);
     const estado = formData.get("estado");
+    
+    // Leer el área activa desde las cookies
+    const getCookie = (name: string) => {
+      const match = document.cookie.match(new RegExp('(^| )' + name + '=([^;]+)'));
+      if (match) return match[2];
+      return "SEPELIO";
+    };
+    const area = getCookie("coop_area");
+
     const payload = {
       nombre: formData.get("nombre"),
       apellido: formData.get("apellido"),
@@ -48,6 +57,7 @@ export default function NuevoSocioPage() {
       estado,
       cuotasCapital,
       montoCapital: montoCapitalActual,
+      area,
     };
 
     const res = await fetch("/api/socios", {

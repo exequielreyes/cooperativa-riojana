@@ -3,6 +3,7 @@ import { prisma } from "@/lib/db";
 import { StatusBadge } from "@/components/ui/StatusBadge";
 import { AccionesSocio } from "@/components/admin/AccionesSocio";
 import { Mail, Search } from "lucide-react";
+import { cookies } from "next/headers";
 import { FiltrosSocios } from "@/components/admin/FiltrosSocios";
 
 const estadoLabel: Record<string, string> = {
@@ -31,15 +32,17 @@ export default async function AdminSociosPage({
   const mesCumpleanos = searchParams.mesCumpleanos ?? "";
   const page = Math.max(1, parseInt(searchParams.page ?? "1", 10) || 1);
 
+  const currentArea = cookies().get("coop_area")?.value || "SEPELIO";
+
   let whereEstado: any = undefined;
   if (estado === "INACTIVO") {
     whereEstado = { estado: "INACTIVO" };
   } else if (estado === "INACTIVO_FALLECIMIENTO") {
-    whereEstado = { estado: "INACTIVO", motivoBaja: "FALLECIMIENTO" };
+    whereEstado = { estado: "INACTIVO", motivoBaja: { in: ["Fallecimiento", "FALLECIMIENTO"] } };
   } else if (estado === "INACTIVO_FALTA_PAGO") {
-    whereEstado = { estado: "INACTIVO", motivoBaja: "FALTA_PAGO" };
+    whereEstado = { estado: "INACTIVO", motivoBaja: { in: ["Falta de pago", "FALTA_PAGO", "Falta de Pagos"] } };
   } else if (estado === "INACTIVO_BAJA") {
-    whereEstado = { estado: "INACTIVO", motivoBaja: "BAJA_VOLUNTARIA" };
+    whereEstado = { estado: "INACTIVO", motivoBaja: { in: ["Baja voluntaria", "BAJA_VOLUNTARIA"] } };
   } else if (estado) {
     whereEstado = { estado: estado as "ACTIVO" | "PENDIENTE" };
   }
@@ -65,11 +68,13 @@ export default async function AdminSociosPage({
     whereFiltroExtra = { createdAt: { gte: hace30dias } };
   } else if (filtroExtra === "cumpleanos_mes") {
     const mes = mesCumpleanos ? parseInt(mesCumpleanos, 10) : new Date().getMonth() + 1;
-    const results = await prisma.$queryRaw<{id: string}[]>`SELECT id FROM socios WHERE MONTH(fechaNacimiento) = ${mes}`;
+    // Debemos limitar este query por area actual también si usamos raw
+    const results = await prisma.$queryRaw<{id: string}[]>`SELECT id FROM socios WHERE MONTH(fechaNacimiento) = ${mes} AND area = ${currentArea}`;
     whereFiltroExtra = { id: { in: results.map(r => r.id) } };
   }
 
   const where = {
+    area: currentArea as any,
     ...(q && {
       OR: [
         { nombre: { contains: q } },
