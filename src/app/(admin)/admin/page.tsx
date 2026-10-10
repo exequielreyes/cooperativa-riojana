@@ -1,3 +1,4 @@
+import { cookies } from "next/headers";
 import Link from "next/link";
 import { prisma } from "@/lib/db";
 import { formatCurrency } from "@/lib/utils";
@@ -17,6 +18,8 @@ function ultimosSeisMeses() {
 }
 
 export default async function AdminMetricasPage() {
+  const currentArea = cookies().get("coop_area")?.value || "SEPELIO";
+
   const inicioMes = new Date();
   inicioMes.setDate(1);
   inicioMes.setHours(0, 0, 0, 0);
@@ -26,23 +29,23 @@ export default async function AdminMetricasPage() {
 
   const [sociosActivos, recaudacionMes, talleresActivos, pagosRango, sociosRango, contadores] =
     await Promise.all([
-      prisma.socio.count({ where: { estado: "ACTIVO" } }),
+      prisma.socio.count({ where: { estado: "ACTIVO", area: currentArea as any } }),
       prisma.pago.aggregate({
         _sum: { monto: true },
-        where: { estadoValidacion: "APROBADO", fechaPago: { gte: inicioMes } },
+        where: { estadoValidacion: "APROBADO", fechaPago: { gte: inicioMes }, socio: { area: currentArea as any } },
       }),
       prisma.taller.count({ where: { estado: "ACTIVO" } }),
       prisma.pago.findMany({
-        where: { estadoValidacion: "APROBADO", fechaPago: { gte: desde } },
+        where: { estadoValidacion: "APROBADO", fechaPago: { gte: desde }, socio: { area: currentArea as any } },
         select: { monto: true, fechaPago: true },
       }),
       prisma.socio.findMany({
-        where: { createdAt: { gte: desde } },
+        where: { createdAt: { gte: desde }, area: currentArea as any },
         select: { createdAt: true },
       }),
-      // Misma función que usa el layout para los badges del sidebar,
-      // así evitamos repetir las queries de conteo.
-      getContadoresPendientes(),
+      // Misma funcion que usa el layout para los badges del sidebar,
+      // as evitamos repetir las queries de conteo.
+      getContadoresPendientes(currentArea),
     ]);
 
   const cobranzaPorMes = rango.map(({ year, month }) => {

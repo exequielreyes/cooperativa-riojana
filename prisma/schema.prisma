@@ -50,6 +50,7 @@ model Socio {
   cuil            String              @default("") @db.VarChar(15)
   fechaing        DateTime            @default(now())
   fechaBaja       DateTime?
+  area            AreaSocio           @default(SEPELIO)
   cuotasCapital   Int                 @default(1)
   montoCapital    Decimal?            @db.Decimal(10, 2)
   cuotas          Cuota[]
@@ -384,4 +385,9 @@ enum TipoContenidoTaller {
   DOCUMENTO
   VIDEO
   ENLACE
+}
+
+enum AreaSocio {
+  SEPELIO
+  CONSUMO
 }

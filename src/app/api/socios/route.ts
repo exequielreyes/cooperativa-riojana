@@ -21,6 +21,7 @@ const crearSocioSchema = z.object({
   barrio: z.string().nullable().optional(),
   entrecalles: z.string().nullable().optional(),
   fechaing: z.string().nullable().optional(),
+  area: z.enum(["SEPELIO", "CONSUMO"]).default("SEPELIO"),
 });
 
 export async function GET() {
@@ -90,6 +91,7 @@ export async function POST(request: NextRequest) {
           barrio: data.barrio || "",
           entrecalles: data.entrecalles || "",
           fechaing: data.fechaing ? new Date(data.fechaing) : new Date(),
+          area: data.area,
         },
       },
     },

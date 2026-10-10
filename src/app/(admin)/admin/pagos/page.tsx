@@ -1,3 +1,4 @@
+import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
 import { prisma } from "@/lib/db";
 import { StatusBadge } from "@/components/ui/StatusBadge";
@@ -28,20 +29,23 @@ export default async function AdminPagosPage({
   const q = searchParams.q ?? "";
   const estado = searchParams.estado ?? "";
   const metodo = searchParams.metodo ?? "";
+  
+  const currentArea = cookies().get("coop_area")?.value || "SEPELIO";
 
   const where = {
-    ...(estado && { estadoValidacion: estado as "PENDIENTE_REVISION" | "APROBADO" | "RECHAZADO" }),
-    ...(metodo && { metodo: metodo as "TRANSFERENCIA" | "EFECTIVO" | "MERCADOPAGO" }),
-    ...(q && {
-      socio: {
+    socio: {
+      area: currentArea as any,
+      ...(q && {
         OR: [
           { nombre: { contains: q } },
           { apellido: { contains: q } },
           { idCooperativa: { contains: q } },
           { email: { contains: q } },
         ],
-      },
-    }),
+      }),
+    },
+    ...(estado && { estadoValidacion: estado as "PENDIENTE_REVISION" | "APROBADO" | "RECHAZADO" }),
+    ...(metodo && { metodo: metodo as "TRANSFERENCIA" | "EFECTIVO" | "MERCADOPAGO" }),
   };
 
   const [pagos, recaudadoAgg, deudaAgg, pendientesCount, configuracion] = await Promise.all([
@@ -53,14 +57,14 @@ export default async function AdminPagosPage({
     }),
     prisma.pago.aggregate({
       _sum: { monto: true },
-      where: { estadoValidacion: "APROBADO" },
+      where: { estadoValidacion: "APROBADO", socio: { area: currentArea as any } },
     }),
     prisma.cuota.aggregate({
       _sum: { monto: true },
-      where: { estado: { in: ["PENDIENTE", "VENCIDO"] } },
+      where: { estado: { in: ["PENDIENTE", "VENCIDO"] }, socio: { area: currentArea as any } },
     }),
     prisma.pago.count({
-      where: { estadoValidacion: "PENDIENTE_REVISION" },
+      where: { estadoValidacion: "PENDIENTE_REVISION", socio: { area: currentArea as any } },
     }),
     prisma.configuracionCooperativa.upsert({
       where: { id: "singleton" },

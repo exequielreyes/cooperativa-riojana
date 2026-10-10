@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { usePathname } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 import { signOut } from "next-auth/react";
 import { LayoutDashboard, Users, CreditCard, Newspaper, GraduationCap, BookOpen, Settings, LogOut } from "lucide-react";
 // import { ThemeToggle } from "@/components/ui/ThemeToggle";
@@ -15,29 +15,44 @@ interface Contadores {
 
 
 
-export function AdminSidebar({contadores}: {contadores: Contadores}) {
+export function AdminSidebar({contadores, currentArea = "SEPELIO"}: {contadores: Contadores; currentArea?: string}) {
   const pathname = usePathname();
+  const router = useRouter();
 
-const links = [
-  { href: "/admin", label: "Métricas", icon: LayoutDashboard, badge: 0 },
-  { href: "/admin/socios", label: "Socios", icon: Users, badge: contadores.socios },
-  { href: "/admin/pagos", label: "Pagos", icon: CreditCard, badge: contadores.pagos },
-  { href: "/admin/talleres", label: "Talleres", icon: GraduationCap, badge: contadores.talleres },
-  { href: "/admin/contenidos", label: "Contenidos", icon: Newspaper, badge: 0 },
-   { href: "/admin/secciones", label: "Secciones", icon: BookOpen, badge: 0 },
-  { href: "/admin/configuracion", label: "Configuración", icon: Settings, badge: 0 },
-];
+  const links = [
+    { href: "/admin", label: "Métricas", icon: LayoutDashboard, badge: 0 },
+    { href: "/admin/socios", label: "Socios", icon: Users, badge: contadores.socios },
+    { href: "/admin/pagos", label: "Pagos", icon: CreditCard, badge: contadores.pagos },
+    { href: "/admin/talleres", label: "Talleres", icon: GraduationCap, badge: contadores.talleres },
+    { href: "/admin/contenidos", label: "Contenidos", icon: Newspaper, badge: 0 },
+    { href: "/admin/secciones", label: "Secciones", icon: BookOpen, badge: 0 },
+    { href: "/admin/configuracion", label: "Configuración", icon: Settings, badge: 0 },
+  ];
+
+  function handleAreaChange(e: React.ChangeEvent<HTMLSelectElement>) {
+    const newArea = e.target.value;
+    document.cookie = `coop_area=${newArea}; path=/; max-age=31536000`;
+    router.refresh();
+  }
 
   return (
     <aside className="flex  w-60 flex-col justify-between border-r border-surface-border bg-white px-4 py-6">
       <div>
-        <p className="mb-6 px-2 text-xs font-semibold uppercase tracking-wide text-gray-400">
+        <div className="mb-6 px-2 text-xs font-semibold uppercase tracking-wide text-gray-400">
           Administración
           <br />
-          <span className="text-[11px] font-normal normal-case text-gray-400">
-            Panel de Gestión
-          </span>
-        </p>
+          <div className="mt-2 text-[11px] font-normal normal-case text-gray-500">
+            Área Activa: 
+            <select 
+              value={currentArea} 
+              onChange={handleAreaChange}
+              className="ml-1 bg-gray-50 border border-gray-200 rounded p-1 outline-none text-primary font-semibold cursor-pointer"
+            >
+              <option value="SEPELIO">SEPELIO</option>
+              <option value="CONSUMO">CONSUMO</option>
+            </select>
+          </div>
+        </div>
         <nav className="space-y-1">
           {links.map((link) => {
             const activo = link.href === "/admin" ? pathname === "/admin" : pathname.startsWith(link.href);

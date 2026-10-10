@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
@@ -74,8 +74,7 @@ export function EditarSocioForm({ socio }: { socio: SocioEditable }) {
 
     const data = await res.json();
 
-    // Si esta edición aprobó a un socio pendiente, el PATCH generó una
-    // contraseña nueva — la mostramos como respaldo por si el email falló.
+  
     if (data.passwordTemporal) {
       setCredenciales({
         email: socio.email,
@@ -97,11 +96,11 @@ export function EditarSocioForm({ socio }: { socio: SocioEditable }) {
           {credenciales.emailEnviado ? (
             <p className="mb-4 text-sm text-gray-600">
               Le enviamos las credenciales por email a <strong>{credenciales.email}</strong>.
-              Este es un resumen por si lo necesitás compartir de otra forma:
+              Este es un resumen por si lo necesitÃ¡s compartir de otra forma:
             </p>
           ) : (
             <p className="mb-4 text-sm text-gray-600">
-              No se pudo enviar el email automático (revisá la configuración
+              No se pudo enviar el email automatico (revisa¡ la configuración
               de Resend). Compartile estas credenciales al socio manualmente:
             </p>
           )}
@@ -124,7 +123,7 @@ export function EditarSocioForm({ socio }: { socio: SocioEditable }) {
   return (
     <form className="space-y-6" onSubmit={handleSubmit}>
       <div className="card">
-        <p className="mb-4 font-medium text-primary-dark">Información Personal</p>
+        <p className="mb-4 font-medium text-primary-dark">Informacion Personal</p>
         <div className="grid gap-4 sm:grid-cols-2">
           <div>
             <label className="mb-1 block text-sm text-gray-500">Nombre</label>
@@ -135,7 +134,7 @@ export function EditarSocioForm({ socio }: { socio: SocioEditable }) {
             <input className="input" name="apellido" defaultValue={socio.apellido} required />
           </div>
           <div>
-            <label className="mb-1 block text-sm text-gray-500">Correo Electrónico</label>
+            <label className="mb-1 block text-sm text-gray-500">Correo Electronico</label>
             <input className="input bg-surface-muted" value={socio.email} disabled />
           </div>
           <div>
@@ -219,10 +218,10 @@ export function EditarSocioForm({ socio }: { socio: SocioEditable }) {
         {estadoActual === "INACTIVO" && (
           <div className="mt-4">
             <label className="mb-2 block text-sm font-medium text-primary-dark">Motivo de Baja</label>
-            <select className="input" name="motivoBaja" defaultValue={socio.motivoBaja || "BAJA_VOLUNTARIA"}>
-              <option value="BAJA_VOLUNTARIA">Baja (voluntaria/estándar)</option>
-              <option value="FALLECIMIENTO">Fallecimiento</option>
-              <option value="FALTA_PAGO">Falta de pagos</option>
+            <select className="input" name="motivoBaja" defaultValue={socio.motivoBaja || "Baja voluntaria"}>
+              <option value="Baja voluntaria">Baja voluntaria</option>
+              <option value="Fallecimiento">Fallecimiento</option>
+              <option value="Falta de pago">Falta de pagos</option>
             </select>
           </div>
         )}
