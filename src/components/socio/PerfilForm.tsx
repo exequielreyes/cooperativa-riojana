@@ -32,18 +32,24 @@ export function PerfilForm({ socio }: { socio: Perfil }) {
     const res = await fetch("/api/perfil", {
       method: "PATCH",
       headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          nombre: formData.get("nombre"),
-          apellido: formData.get("apellido"),
-          telefono: formData.get("telefono"),
-          fechaNacimiento: formData.get("fechaNacimiento") ? new Date(formData.get("fechaNacimiento") as string).toISOString() : null,
-        }),
-      });
+      body: JSON.stringify({
+        nombre: formData.get("nombre"),
+        apellido: formData.get("apellido"),
+        telefono: formData.get("telefono"),
+        email: formData.get("email"),
+        fechaNacimiento: formData.get("fechaNacimiento") ? new Date(formData.get("fechaNacimiento") as string).toISOString() : null,
+      }),
+    });
 
-      setEnviando(false);
-      setMensaje(res.ok ? "Cambios guardados." : "No se pudo actualizar el perfil.");
-      if (res.ok) router.refresh();
+    setEnviando(false);
+    if (!res.ok) {
+      const errData = await res.json().catch(() => null);
+      setMensaje(errData?.error || "No se pudo actualizar el perfil.");
+    } else {
+      setMensaje("Cambios guardados.");
+      router.refresh();
     }
+  }
 
     async function handleFoto(e: React.ChangeEvent<HTMLInputElement>) {
       const archivo = e.target.files?.[0];
@@ -90,7 +96,7 @@ export function PerfilForm({ socio }: { socio: Perfil }) {
         <div className="grid gap-4 sm:grid-cols-2">
           <input className="input" name="nombre" defaultValue={socio.nombre} placeholder="Nombre" required />
           <input className="input" name="apellido" defaultValue={socio.apellido} placeholder="Apellido" required />
-          <input className="input bg-surface-muted" value={socio.email} disabled />
+          <input className="input" type="email" name="email" defaultValue={socio.email} placeholder="Correo Electrónico" required />
           <input className="input" name="telefono" defaultValue={socio.telefono} placeholder="Teléfono" />
           <input className="input" type="date" name="fechaNacimiento" defaultValue={socio.fechaNacimiento} placeholder="Fecha de Nacimiento" />
         </div>

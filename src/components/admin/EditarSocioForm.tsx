@@ -1,4 +1,4 @@
-﻿"use client";
+"use client";
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
@@ -55,6 +55,7 @@ export function EditarSocioForm({ socio }: { socio: SocioEditable }) {
       fechaing: formData.get("fechaing") ? `${formData.get("fechaing")}T00:00:00.000Z` : null,
       tipoMiembro: formData.get("tipoMiembro"),
       estado: formData.get("estado"),
+      email: formData.get("email"),
       motivoBaja: formData.get("estado") === "INACTIVO" ? formData.get("motivoBaja") : null,
       fechaNacimiento: formData.get("fechaNacimiento") ? `${formData.get("fechaNacimiento")}T00:00:00.000Z` : null,
     };
@@ -68,7 +69,8 @@ export function EditarSocioForm({ socio }: { socio: SocioEditable }) {
     setEnviando(false);
 
     if (!res.ok) {
-      setError("No se pudo guardar los cambios.");
+      const errData = await res.json().catch(() => null);
+      setError(errData?.error || "No se pudo guardar los cambios.");
       return;
     }
 
@@ -77,7 +79,7 @@ export function EditarSocioForm({ socio }: { socio: SocioEditable }) {
   
     if (data.passwordTemporal) {
       setCredenciales({
-        email: socio.email,
+        email: (formData.get("email") as string) || socio.email,
         passwordTemporal: data.passwordTemporal,
         emailEnviado: Boolean(data.emailEnviado),
       });
@@ -134,8 +136,8 @@ export function EditarSocioForm({ socio }: { socio: SocioEditable }) {
             <input className="input" name="apellido" defaultValue={socio.apellido} required />
           </div>
           <div>
-            <label className="mb-1 block text-sm text-gray-500">Correo Electronico</label>
-            <input className="input bg-surface-muted" value={socio.email} disabled />
+            <label className="mb-1 block text-sm text-gray-500">Correo Electrónico</label>
+            <input className="input" type="email" name="email" defaultValue={socio.email} required />
           </div>
           <div>
             <label className="mb-1 block text-sm text-gray-500">Nº Socio</label>

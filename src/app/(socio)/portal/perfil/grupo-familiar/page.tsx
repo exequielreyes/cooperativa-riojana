@@ -26,6 +26,7 @@ export default async function GrupoFamiliarPage() {
           parentesco: a.parentesco,
           email: a.email,
           telefono: a.telefono,
+          fechaNacimiento: a.fechaNacimiento ? a.fechaNacimiento.toISOString().split("T")[0] : null,
         }))}
       />
     </div>

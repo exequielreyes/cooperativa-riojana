@@ -22,6 +22,7 @@ const editarSocioSchema = z.object({
   barrio: z.string().nullable().optional(),
   entrecalles: z.string().nullable().optional(),
   fechaing: z.string().nullable().optional(),
+  email: z.string().email().optional(),
 });
 
 export async function GET(_req: NextRequest, { params }: { params: { id: string } }) {
@@ -105,6 +106,23 @@ export async function PATCH(request: NextRequest, { params }: { params: { id: st
         await prisma.cuota.createMany({ data: cuotasParaCrear as any });
       }
     }
+  }
+
+  if (parsed.data.email && parsed.data.email.toLowerCase() !== socioActual.email.toLowerCase()) {
+    const emailExistente = await prisma.usuario.findFirst({
+      where: {
+        email: parsed.data.email,
+        id: { not: socioActual.usuarioId },
+      },
+    });
+    if (emailExistente) {
+      return NextResponse.json({ error: "El correo electrónico ya está en uso." }, { status: 400 });
+    }
+
+    await prisma.usuario.update({
+      where: { id: socioActual.usuarioId },
+      data: { email: parsed.data.email },
+    });
   }
 
   // Dar de baja desactiva también el acceso a la cuenta; reactivar lo restaura.
