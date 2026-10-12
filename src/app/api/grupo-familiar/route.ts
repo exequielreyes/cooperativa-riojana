@@ -9,6 +9,7 @@ const crearAsociadoSchema = z.object({
   apellido: z.string().min(1),
   dni: z.string().optional(),
   parentesco: z.string().min(1),
+  fechaNacimiento: z.string().optional().nullable(),
   email: z.string().email().optional().or(z.literal("")),
   telefono: z.string().optional(),
 });
@@ -38,8 +39,15 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: parsed.error.flatten() }, { status: 400 });
   }
 
+  const { fechaNacimiento, ...rest } = parsed.data;
+  const dataToSave = {
+    ...rest,
+    socioId: session.user.socioId,
+    fechaNacimiento: fechaNacimiento ? new Date(fechaNacimiento) : null
+  };
+
   const asociado = await prisma.grupoFamiliar.create({
-    data: { ...parsed.data, socioId: session.user.socioId },
+    data: dataToSave,
   });
 
   return NextResponse.json(asociado, { status: 201 });
