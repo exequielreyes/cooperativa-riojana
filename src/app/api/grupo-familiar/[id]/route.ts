@@ -28,6 +28,10 @@ export async function DELETE(
     return NextResponse.json({ error: "No encontrado" }, { status: 404 });
   }
 
+  if (asociado.parentesco.startsWith("Titular Anterior")) {
+    return NextResponse.json({ error: "No se puede eliminar el registro del titular anterior." }, { status: 400 });
+  }
+
   await prisma.grupoFamiliar.delete({ where: { id: params.id } });
   return NextResponse.json({ ok: true });
 }
@@ -44,6 +48,10 @@ export async function PUT(
   const asociado = await prisma.grupoFamiliar.findUnique({ where: { id: params.id } });
   if (!asociado || asociado.socioId !== session.user.socioId) {
     return NextResponse.json({ error: "No encontrado" }, { status: 404 });
+  }
+
+  if (asociado.parentesco.startsWith("Titular Anterior")) {
+    return NextResponse.json({ error: "No se puede modificar el registro del titular anterior." }, { status: 400 });
   }
 
   const body = await request.json();

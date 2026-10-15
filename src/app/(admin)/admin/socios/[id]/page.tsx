@@ -30,6 +30,47 @@ export default async function PerfilSocioAdminPage({ params }: { params: { id: s
   const cuotasPendientes = socio.cuotas.filter((c) => c.estado !== "PAGADO");
   const deudaTotal = cuotasPendientes.reduce((acc, c) => acc + Number(c.monto), 0);
 
+  let grupoFamiliarMostrar = socio.grupoFamiliar;
+  let nuevoTitular: {
+    id: string;
+    nombre: string;
+    apellido: string;
+    dni: string;
+    parentesco: string;
+    email: string | null;
+    telefono: string | null;
+  } | null = null;
+
+  if (socio.idCooperativa.includes("-BAJA")) {
+    const cuentaId = socio.idCooperativa.split("-BAJA")[0];
+    const cuentaActiva = await prisma.socio.findFirst({
+      where: { idCooperativa: cuentaId },
+      include: { grupoFamiliar: true },
+    });
+
+    if (cuentaActiva) {
+      nuevoTitular = {
+        id: cuentaActiva.id,
+        nombre: cuentaActiva.nombre,
+        apellido: cuentaActiva.apellido,
+        dni: cuentaActiva.dni,
+        parentesco: "Nuevo Titular (Asumió titularidad)",
+        email: cuentaActiva.email,
+        telefono: cuentaActiva.telefono,
+      };
+
+      // Si el socio inactivo no tiene adherentes cargados directamente,
+      // mostramos los adherentes que pertenecían a la cuenta, excluyendo al titular saliente
+      if (grupoFamiliarMostrar.length === 0) {
+        grupoFamiliarMostrar = cuentaActiva.grupoFamiliar.filter(
+          (f) => f.dni !== socio.dni && !f.parentesco.startsWith("Titular Anterior")
+        );
+      }
+    }
+  }
+
+  const totalFamiliares = (nuevoTitular ? 1 : 0) + grupoFamiliarMostrar.length;
+
   return (
     <div className="mx-auto max-w-5xl space-y-6">
       {/* HEADER BANNER */}
@@ -212,30 +253,77 @@ export default async function PerfilSocioAdminPage({ params }: { params: { id: s
           </div>
 
           <div className="rounded-2xl border border-gray-100 bg-white shadow-sm overflow-hidden">
-            <div className="flex items-center gap-2 border-b border-gray-100 bg-gray-50/50 p-5">
-              <Users size={18} className="text-gray-500" />
-              <h3 className="font-semibold text-gray-900">Grupo Familiar Adherido</h3>
+            <div className="flex items-center justify-between border-b border-gray-100 bg-gray-50/50 p-5">
+              <div className="flex items-center gap-2">
+                <Users size={18} className="text-gray-500" />
+                <h3 className="font-semibold text-gray-900">Grupo Familiar</h3>
+              </div>
+              <span className="flex h-6 min-w-[24px] items-center justify-center rounded-full bg-gray-200 px-1.5 text-xs font-semibold text-gray-600">
+                {totalFamiliares}
+              </span>
             </div>
             
-            {socio.grupoFamiliar.length === 0 ? (
+            {totalFamiliares === 0 ? (
               <div className="p-8 text-center">
                 <p className="text-sm text-gray-500">No hay adherentes cargados en este grupo familiar.</p>
               </div>
             ) : (
               <div className="divide-y divide-gray-100">
-                {socio.grupoFamiliar.map((asociado) => (
+                {/* Si hubo traspaso de titularidad, mostramos quién asumió como nuevo titular */}
+                {nuevoTitular && (
+                  <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 px-5 py-4 transition-colors hover:bg-gray-50/50 bg-blue-50/15">
+                    <div className="flex items-start gap-3">
+                      <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-primary/10 font-bold text-primary text-sm">
+                        {nuevoTitular.nombre ? nuevoTitular.nombre[0].toLowerCase() : "t"}
+                      </div>
+                      <div>
+                        <Link href={`/admin/socios/${nuevoTitular.id}`} className="font-bold text-gray-900 hover:underline hover:text-primary">
+                          {nuevoTitular.nombre} {nuevoTitular.apellido}
+                        </Link>
+                        <p className="mt-0.5 text-xs font-semibold text-primary">
+                          {nuevoTitular.parentesco}
+                        </p>
+                        {nuevoTitular.dni && (
+                          <p className="mt-0.5 text-xs text-gray-500">
+                            DNI: {nuevoTitular.dni}
+                          </p>
+                        )}
+                      </div>
+                    </div>
+                    {(nuevoTitular.email || nuevoTitular.telefono) && (
+                      <div className="flex items-center gap-1.5 rounded-md bg-white border border-gray-100 px-3 py-1.5 text-xs text-gray-600">
+                        <Phone size={12} className="text-gray-400" />
+                        {[nuevoTitular.email, nuevoTitular.telefono].filter(Boolean).join(" • ")}
+                      </div>
+                    )}
+                  </div>
+                )}
+
+                {/* Adherentes que tenía el grupo familiar */}
+                {grupoFamiliarMostrar.map((asociado) => (
                   <div key={asociado.id} className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 px-5 py-4 transition-colors hover:bg-gray-50/50">
-                    <div>
-                      <p className="font-medium text-gray-900">{asociado.nombre} {asociado.apellido}</p>
-                      <p className="mt-0.5 text-xs text-gray-500">
-                        <span className="font-medium text-primary">{asociado.parentesco}</span>
-                        {asociado.dni ? ` • DNI ${asociado.dni}` : ""}
-                      </p>
+                    <div className="flex items-start gap-3">
+                      <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-gray-100 font-bold text-gray-500 text-sm">
+                        {asociado.nombre ? asociado.nombre[0].toLowerCase() : "f"}
+                      </div>
+                      <div>
+                        <p className="font-bold text-gray-900">{asociado.nombre} {asociado.apellido}</p>
+                        <p className={`mt-0.5 text-xs ${asociado.parentesco.startsWith("Titular Anterior") ? "font-medium text-gray-600" : "font-medium text-primary"}`}>
+                          {asociado.parentesco}
+                        </p>
+                        {asociado.dni && (
+                          <p className="mt-0.5 text-xs text-gray-500">
+                            DNI: {asociado.dni}
+                          </p>
+                        )}
+                      </div>
                     </div>
-                    <div className="flex items-center gap-1.5 rounded-md bg-gray-50 px-3 py-1.5 text-xs text-gray-600">
-                      <Phone size={12} className="text-gray-400" />
-                      {[asociado.email, asociado.telefono].filter(Boolean).join(" • ") || "Sin contacto"}
-                    </div>
+                    {(asociado.email || asociado.telefono) && (
+                      <div className="flex items-center gap-1.5 rounded-md bg-gray-50 px-3 py-1.5 text-xs text-gray-600">
+                        <Phone size={12} className="text-gray-400" />
+                        {[asociado.email, asociado.telefono].filter(Boolean).join(" • ")}
+                      </div>
+                    )}
                   </div>
                 ))}
               </div>

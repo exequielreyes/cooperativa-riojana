@@ -23,6 +23,7 @@ const editarSocioSchema = z.object({
   entrecalles: z.string().nullable().optional(),
   fechaing: z.string().nullable().optional(),
   email: z.string().email().optional(),
+  transferirAId: z.string().nullable().optional(),
 });
 
 export async function GET(_req: NextRequest, { params }: { params: { id: string } }) {
@@ -125,13 +126,128 @@ export async function PATCH(request: NextRequest, { params }: { params: { id: st
     });
   }
 
+  // Traspaso de titularidad si se dio de baja y se seleccionó un familiar
+  if (parsed.data.estado === "INACTIVO" && parsed.data.transferirAId) {
+    const familiar = await prisma.grupoFamiliar.findFirst({
+      where: { id: parsed.data.transferirAId, socioId: socioActual.id },
+    });
+
+    if (familiar) {
+      if (familiar.dni && familiar.dni.trim() !== "") {
+        const dniColision = await prisma.socio.findFirst({
+          where: { dni: familiar.dni, id: { not: socioActual.id } },
+        });
+        if (dniColision) {
+          return NextResponse.json({ error: `El DNI ${familiar.dni} ya pertenece a otro socio registrado.` }, { status: 400 });
+        }
+      }
+
+      let motivoFinal = parsed.data.motivoBaja;
+      if (motivoFinal === "FALLECIMIENTO") motivoFinal = "Fallecimiento";
+      else if (motivoFinal === "FALTA_PAGO") motivoFinal = "Falta de pago";
+      else if (motivoFinal === "BAJA_VOLUNTARIA") motivoFinal = "Baja voluntaria";
+
+      const usuarioExTitular = await prisma.usuario.create({
+        data: {
+          email: `baja-${Date.now()}-${socioActual.email}`,
+          passwordHash: "inactivo",
+          rol: "SOCIO",
+          activo: false,
+        },
+      });
+
+      const nuevoDni = familiar.dni && familiar.dni.trim() !== "" ? familiar.dni : `${socioActual.dni}-T`;
+      const exTitularDni = socioActual.dni;
+
+      await prisma.socio.update({
+        where: { id: socioActual.id },
+        data: { dni: `TEMP-${Date.now()}-${socioActual.id.slice(-4)}` },
+      });
+
+      await prisma.socio.create({
+        data: {
+          usuarioId: usuarioExTitular.id,
+          nombre: socioActual.nombre,
+          apellido: socioActual.apellido,
+          dni: exTitularDni,
+          idCooperativa: `${socioActual.idCooperativa}-BAJA-${Date.now().toString().slice(-4)}`,
+          telefono: socioActual.telefono,
+          email: socioActual.email,
+          direccion: socioActual.direccion,
+          region: socioActual.region,
+          tipoMiembro: socioActual.tipoMiembro,
+          estado: "INACTIVO",
+          motivoBaja: motivoFinal || "Baja voluntaria",
+          fechaBaja: new Date(),
+          fechaing: socioActual.fechaing,
+          fechaNacimiento: socioActual.fechaNacimiento,
+          cuil: socioActual.cuil,
+          ocupacion: socioActual.ocupacion,
+          barrio: socioActual.barrio,
+          entrecalles: socioActual.entrecalles,
+          area: socioActual.area,
+        },
+      });
+
+      const nuevoEmail = familiar.email && familiar.email.trim() !== "" ? familiar.email : socioActual.email;
+      await prisma.usuario.update({
+        where: { id: socioActual.usuarioId },
+        data: {
+          nombre: `${familiar.nombre} ${familiar.apellido}`,
+          email: nuevoEmail,
+          activo: true,
+        },
+      });
+
+      const socioActualizado = await prisma.socio.update({
+        where: { id: socioActual.id },
+        data: {
+          nombre: familiar.nombre,
+          apellido: familiar.apellido,
+          dni: nuevoDni,
+          fechaNacimiento: familiar.fechaNacimiento,
+          telefono: familiar.telefono || socioActual.telefono,
+          email: nuevoEmail,
+          estado: "ACTIVO",
+          motivoBaja: null,
+          fechaBaja: null,
+        },
+      });
+
+      await prisma.grupoFamiliar.delete({
+        where: { id: familiar.id },
+      });
+
+      // Agregamos al titular anterior al grupo familiar para que conste su antecedente
+      await prisma.grupoFamiliar.create({
+        data: {
+          socioId: socioActual.id,
+          nombre: socioActual.nombre,
+          apellido: socioActual.apellido,
+          dni: exTitularDni,
+          parentesco: `Titular Anterior (Baja: ${motivoFinal || "Baja voluntaria"})`,
+          fechaNacimiento: socioActual.fechaNacimiento,
+          telefono: socioActual.telefono,
+          email: socioActual.email,
+        },
+      });
+
+      return NextResponse.json({ socio: socioActualizado, passwordTemporal, emailEnviado });
+    }
+  }
+
   // Dar de baja desactiva también el acceso a la cuenta; reactivar lo restaura.
   const dataToUpdate: any = { ...parsed.data };
+  delete dataToUpdate.transferirAId;
+
   if (parsed.data.estado === "INACTIVO") {
     await prisma.usuario.update({ where: { id: socioActual.usuarioId }, data: { activo: false } });
     if (socioActual.estado !== "INACTIVO") {
       dataToUpdate.fechaBaja = new Date();
     }
+    if (dataToUpdate.motivoBaja === "FALLECIMIENTO") dataToUpdate.motivoBaja = "Fallecimiento";
+    else if (dataToUpdate.motivoBaja === "FALTA_PAGO") dataToUpdate.motivoBaja = "Falta de pago";
+    else if (dataToUpdate.motivoBaja === "BAJA_VOLUNTARIA") dataToUpdate.motivoBaja = "Baja voluntaria";
   } else if (parsed.data.estado === "ACTIVO" || parsed.data.estado === "PENDIENTE") {
     if (parsed.data.estado === "ACTIVO") {
       await prisma.usuario.update({ where: { id: socioActual.usuarioId }, data: { activo: true } });

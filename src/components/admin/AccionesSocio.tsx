@@ -46,11 +46,13 @@ export function AccionesSocio({
   estado,
   email,
   nombre,
+  grupoFamiliar = [],
 }: {
   socioId: string;
   estado: string;
   email: string;
   nombre: string;
+  grupoFamiliar?: { id: string; nombre: string; apellido: string; parentesco?: string }[];
 }) {
   const router = useRouter();
   const [abierto, setAbierto] = useState(false);
@@ -71,13 +73,17 @@ export function AccionesSocio({
     return () => document.removeEventListener("mousedown", handleClick);
   }, []);
 
-  const [motivoBaja, setMotivoBaja] = useState<string>("BAJA_VOLUNTARIA");
+  const [motivoBaja, setMotivoBaja] = useState<string>("");
+  const [transferirAId, setTransferirAId] = useState<string>("");
 
   async function cambiarEstado(nuevoEstado: "ACTIVO" | "INACTIVO") {
     setCargando(true);
     const body: any = { estado: nuevoEstado };
     if (nuevoEstado === "INACTIVO" && confirmando === "BAJA") {
-      body.motivoBaja = motivoBaja;
+      body.motivoBaja = motivoBaja || null;
+      if (transferirAId) {
+        body.transferirAId = transferirAId;
+      }
     }
     if (nuevoEstado === "ACTIVO") {
       body.motivoBaja = null;
@@ -90,23 +96,30 @@ export function AccionesSocio({
     });
     setCargando(false);
     setConfirmando(null);
-    setMotivoBaja("BAJA_VOLUNTARIA"); // reset
+    setMotivoBaja("");
+    setTransferirAId("");
 
-    if (res.ok) {
-      const data = await res.json();
-      if (data.passwordTemporal) {
-        setCredenciales({
-          email,
-          passwordTemporal: data.passwordTemporal,
-          emailEnviado: Boolean(data.emailEnviado),
-        });
-      }
+    if (!res.ok) {
+      const err = await res.json().catch(() => null);
+      alert(err?.error || "Error al procesar la baja.");
+      return;
+    }
+
+    const data = await res.json();
+    if (data.passwordTemporal) {
+      setCredenciales({
+        email,
+        passwordTemporal: data.passwordTemporal,
+        emailEnviado: Boolean(data.emailEnviado),
+      });
     }
     router.refresh();
   }
 
   function pedirConfirmacion(accion: AccionConfirmable) {
     setAbierto(false);
+    setMotivoBaja("");
+    setTransferirAId("");
     setConfirmando(accion);
   }
 
@@ -173,20 +186,39 @@ export function AccionesSocio({
           onCancel={() => setConfirmando(null)}
         >
           {confirmando === "BAJA" && (
-            <div className="mt-4">
-              <label htmlFor="motivoBaja" className="block text-sm font-medium text-gray-700">
-                Motivo de la baja
-              </label>
+            <div className="mt-4 space-y-3.5">
               <select
                 id="motivoBaja"
                 value={motivoBaja}
                 onChange={(e) => setMotivoBaja(e.target.value)}
-                className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-primary focus:ring-primary sm:text-sm p-2 border"
+                className="w-full rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm text-gray-700 shadow-sm focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary"
               >
-                <option value="BAJA_VOLUNTARIA">Baja (voluntaria/estándar)</option>
+                <option value="">Seleccione un motivo (opcional)</option>
+                <option value="BAJA_VOLUNTARIA">Baja voluntaria</option>
                 <option value="FALLECIMIENTO">Fallecimiento</option>
                 <option value="FALTA_PAGO">Falta de pagos</option>
               </select>
+
+              {grupoFamiliar && grupoFamiliar.length > 0 && (
+                <div className="rounded-xl border border-blue-100 bg-[#f0f6ff] p-3.5 text-left">
+                  <p className="text-sm font-semibold text-[#1e40af]">Traspaso de titularidad</p>
+                  <p className="mt-1 text-xs text-[#2563eb] leading-relaxed">
+                    Este socio tiene un grupo familiar. Podés seleccionar un integrante para que asuma como titular de la cuenta.
+                  </p>
+                  <select
+                    value={transferirAId}
+                    onChange={(e) => setTransferirAId(e.target.value)}
+                    className="mt-3 w-full rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm text-gray-800 shadow-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
+                  >
+                    <option value="">No transferir (Baja definitiva)</option>
+                    {grupoFamiliar.map((fam) => (
+                      <option key={fam.id} value={fam.id}>
+                        Transferir a: {fam.nombre} {fam.apellido}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+              )}
             </div>
           )}
         </ConfirmModal>

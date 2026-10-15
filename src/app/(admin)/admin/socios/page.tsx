@@ -236,7 +236,13 @@ export default async function AdminSociosPage({
                        socio.motivoBaja || "—"}
                     </td>
                     <td className="px-6 py-3">
-                      <AccionesSocio socioId={socio.id} estado={socio.estado} email={socio.email} nombre={`${socio.nombre} ${socio.apellido}`} />
+                      <AccionesSocio 
+                        socioId={socio.id} 
+                        estado={socio.estado} 
+                        email={socio.email} 
+                        nombre={`${socio.nombre} ${socio.apellido}`} 
+                        grupoFamiliar={socio.grupoFamiliar} 
+                      />
                     </td>
                   </>
                 ) : (
@@ -257,7 +263,13 @@ export default async function AdminSociosPage({
                       />
                     </td>
                     <td className="px-6 py-3">
-                      <AccionesSocio socioId={socio.id} estado={socio.estado} email={socio.email} nombre={`${socio.nombre} ${socio.apellido}`} />
+                      <AccionesSocio 
+                        socioId={socio.id} 
+                        estado={socio.estado} 
+                        email={socio.email} 
+                        nombre={`${socio.nombre} ${socio.apellido}`} 
+                        grupoFamiliar={socio.grupoFamiliar} 
+                      />
                     </td>
                   </>
                 )}
