@@ -136,6 +136,7 @@ model Pago {
   validadoPorId    String?
   fechaValidacion  DateTime?
   notaRechazo      String?
+  grupoPagoId      String?
   cuota            Cuota                @relation(fields: [cuotaId], references: [id])
   socio            Socio                @relation(fields: [socioId], references: [id])
   validadoPor      Usuario?             @relation("ValidadorPago", fields: [validadoPorId], references: [id])
@@ -143,6 +144,7 @@ model Pago {
   @@index([socioId])
   @@index([estadoValidacion])
   @@index([cuotaId])
+  @@index([grupoPagoId])
   @@index([validadoPorId], map: "pagos_validadoPorId_fkey")
   @@map("pagos")
 }

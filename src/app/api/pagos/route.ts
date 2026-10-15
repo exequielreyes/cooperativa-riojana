@@ -61,8 +61,9 @@ export async function POST(request: NextRequest) {
   }
 
   const comprobanteUrl = await guardarArchivo(comprobante, "comprobantes");
+  const grupoPagoId = `grp_${Date.now()}_${Math.random().toString(36).substring(2, 9)}`;
 
-  // Un Pago por cuota (mismo comprobante y método para todas), en una sola transacción.
+  // Un Pago por cuota (mismo comprobante, método y grupoPagoId para todas), en una sola transacción.
   const pagos = await prisma.$transaction(
     cuotas.map((cuota) =>
       prisma.pago.create({
@@ -73,6 +74,7 @@ export async function POST(request: NextRequest) {
           metodo: metodo as "TRANSFERENCIA" | "EFECTIVO" | "MERCADOPAGO",
           comprobanteUrl,
           estadoValidacion: "PENDIENTE_REVISION",
+          grupoPagoId,
         },
       })
     )

@@ -4,11 +4,23 @@ import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { ConfirmModal } from "@/components/ui/ConfirmModal";
 
-export function AccionesPago({ pagoId }: { pagoId: string }) {
+export function AccionesPago({
+  pagoId,
+  pagoIds,
+  cantidadCuotas = 1,
+  cuotasTexto,
+}: {
+  pagoId: string;
+  pagoIds?: string[];
+  cantidadCuotas?: number;
+  cuotasTexto?: string;
+}) {
   const router = useRouter();
   const [cargando, setCargando] = useState<"APROBAR" | "RECHAZAR" | null>(null);
   const [confirmando, setConfirmando] = useState<"APROBAR" | "RECHAZAR" | null>(null);
   const [notaRechazo, setNotaRechazo] = useState("");
+
+  const esGrupal = cantidadCuotas > 1;
 
   async function accionar(accion: "APROBAR" | "RECHAZAR") {
     setCargando(accion);
@@ -17,6 +29,7 @@ export function AccionesPago({ pagoId }: { pagoId: string }) {
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
         accion,
+        pagoIds,
         ...(accion === "RECHAZAR" && notaRechazo.trim() && { notaRechazo: notaRechazo.trim() }),
       }),
     });
@@ -47,8 +60,12 @@ export function AccionesPago({ pagoId }: { pagoId: string }) {
 
       <ConfirmModal
         open={confirmando === "APROBAR"}
-        title="¿Aprobar este pago?"
-        description="El comprobante quedará validado y la cuota asociada pasará a estado Pagado. Esta acción no se puede deshacer."
+        title={esGrupal ? `¿Aprobar pago de ${cantidadCuotas} cuotas?` : "¿Aprobar este pago?"}
+        description={
+          esGrupal
+            ? `El comprobante quedará validado y las ${cantidadCuotas} cuotas asociadas (${cuotasTexto || ""}) pasarán a estado Pagado. Esta acción no se puede deshacer.`
+            : "El comprobante quedará validado y la cuota asociada pasará a estado Pagado. Esta acción no se puede deshacer."
+        }
         confirmLabel="Sí, aprobar"
         loading={cargando === "APROBAR"}
         onConfirm={() => accionar("APROBAR")}
@@ -57,8 +74,12 @@ export function AccionesPago({ pagoId }: { pagoId: string }) {
 
       <ConfirmModal
         open={confirmando === "RECHAZAR"}
-        title="¿Rechazar este pago?"
-        description="El comprobante quedará marcado como rechazado y la cuota seguirá pendiente. El socio deberá volver a reportar el pago."
+        title={esGrupal ? `¿Rechazar pago de ${cantidadCuotas} cuotas?` : "¿Rechazar este pago?"}
+        description={
+          esGrupal
+            ? `El comprobante quedará marcado como rechazado y las ${cantidadCuotas} cuotas seguirán pendientes. El socio deberá volver a reportar el pago.`
+            : "El comprobante quedará marcado como rechazado y la cuota seguirá pendiente. El socio deberá volver a reportar el pago."
+        }
         confirmLabel="Sí, rechazar"
         tone="danger"
         loading={cargando === "RECHAZAR"}
