@@ -40,7 +40,7 @@ export async function GET(request: NextRequest) {
 
   const pagos = await prisma.pago.findMany({
     where,
-    include: { socio: true, validadoPor: true },
+    include: { socio: true, validadoPor: true, cuota: true },
     orderBy: { fechaPago: "desc" },
   });
 
@@ -55,6 +55,7 @@ export async function GET(request: NextRequest) {
     { header: "Socio", key: "socio", width: 28 },
     { header: "ID Cooperativa", key: "idCooperativa", width: 16 },
     { header: "Email", key: "email", width: 28 },
+    { header: "Cuotas Asociadas", key: "cuotas", width: 32 },
     { header: "Método", key: "metodo", width: 16 },
     { header: "Estado", key: "estado", width: 14 },
     { header: "Monto", key: "monto", width: 14 },
@@ -70,24 +71,59 @@ export async function GET(request: NextRequest) {
     fgColor: { argb: "FFE8F0EC" },
   };
 
-  let totalAprobado = 0;
+  type PagoConRelaciones = (typeof pagos)[0];
+  interface PagoAgrupadoExport {
+    pago: PagoConRelaciones;
+    montoTotal: number;
+    cuotasDetalle: string;
+  }
+
+  const gruposMap = new Map<string, PagoAgrupadoExport>();
 
   for (const pago of pagos) {
+    let groupKey = `pago_${pago.id}`;
+    if (pago.grupoPagoId) {
+      groupKey = `grp_${pago.grupoPagoId}`;
+    } else if (pago.comprobanteUrl) {
+      groupKey = `comp_${pago.socioId}_${pago.comprobanteUrl}`;
+    }
+
+    const cuotaStr = pago.cuota ? `${pago.cuota.periodo}` : "";
+    const existing = gruposMap.get(groupKey);
+    if (existing) {
+      existing.montoTotal += Number(pago.monto);
+      if (cuotaStr) {
+        existing.cuotasDetalle += `, ${cuotaStr}`;
+      }
+    } else {
+      gruposMap.set(groupKey, {
+        pago,
+        montoTotal: Number(pago.monto),
+        cuotasDetalle: cuotaStr,
+      });
+    }
+  }
+
+  let totalAprobado = 0;
+
+  for (const item of gruposMap.values()) {
+    const { pago, montoTotal, cuotasDetalle } = item;
     sheet.addRow({
       fecha: pago.fechaPago,
       socio: `${pago.socio.nombre} ${pago.socio.apellido}`,
       idCooperativa: pago.socio.idCooperativa,
       email: pago.socio.email,
+      cuotas: cuotasDetalle || "—",
       metodo: pago.metodo,
       estado: estadoLabel[pago.estadoValidacion],
-      monto: Number(pago.monto),
+      monto: montoTotal,
       validadoPor: pago.validadoPor?.email ?? "",
       fechaValidacion: pago.fechaValidacion ?? null,
       notaRechazo: pago.notaRechazo ?? "",
     });
 
     if (pago.estadoValidacion === "APROBADO") {
-      totalAprobado += Number(pago.monto);
+      totalAprobado += montoTotal;
     }
   }
 
