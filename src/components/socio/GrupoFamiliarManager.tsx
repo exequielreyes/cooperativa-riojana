@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { StatusBadge } from "@/components/ui/StatusBadge";
 
 interface Asociado {
   id: string;
@@ -73,6 +74,7 @@ export function GrupoFamiliarManager({ asociadosIniciales }: { asociadosIniciale
   }
 
   function iniciarEdicion(asociado: Asociado) {
+    if (asociado.parentesco.startsWith("Titular Anterior")) return;
     setAsociadoEnEdicion(asociado);
     setMostrarForm(true);
   }
@@ -139,12 +141,18 @@ export function GrupoFamiliarManager({ asociadosIniciales }: { asociadosIniciale
               )}
             </div>
             <div className="flex items-center gap-3">
-              <button className="text-sm text-primary hover:underline" onClick={() => iniciarEdicion(asociado)}>
-                Editar
-              </button>
-              <button className="text-sm text-status-danger hover:underline" onClick={() => quitarAsociado(asociado.id)}>
-                Quitar
-              </button>
+              {asociado.parentesco.startsWith("Titular Anterior") ? (
+                <StatusBadge label="Inactivo" tone="neutral" />
+              ) : (
+                <>
+                  <button className="text-sm text-primary hover:underline" onClick={() => iniciarEdicion(asociado)}>
+                    Editar
+                  </button>
+                  <button className="text-sm text-status-danger hover:underline" onClick={() => quitarAsociado(asociado.id)}>
+                    Quitar
+                  </button>
+                </>
+              )}
             </div>
           </div>
         ))}

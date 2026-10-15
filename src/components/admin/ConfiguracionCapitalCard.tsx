@@ -25,7 +25,7 @@ export function ConfiguracionCapitalCard({ montoActual }: { montoActual: number 
   }
 
   return (
-    <div className="card mt-6">
+    <div className="card">
       <p className="mb-3 font-medium text-primary-dark">Cuota de Asociación (Capital)</p>
 
       {editando ? (

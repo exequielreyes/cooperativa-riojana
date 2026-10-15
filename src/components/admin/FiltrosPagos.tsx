@@ -85,7 +85,7 @@ export function FiltrosPagos() {
         <option value="">Todos los Métodos</option>
         <option value="TRANSFERENCIA">Transferencia</option>
         <option value="EFECTIVO">Efectivo</option>
-        <option value="MERCADOPAGO">MercadoPago</option>
+        {/* <option value="MERCADOPAGO">MercadoPago</option> */}
       </select>
     </div>
   );
