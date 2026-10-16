@@ -38,10 +38,32 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: "Formato no admitido (usá JPG, PNG o PDF)" }, { status: 400 });
   }
 
-  const cuotas = await prisma.cuota.findMany({
-    where: { id: { in: cuotaIds }, socioId: session.user.socioId },
-     include: { pagos: { orderBy: { fechaPago: "desc" } } },
+  // Buscar todas las cuotas pendientes del socio ordenadas cronológicamente
+  const todasCuotasPendientes = await prisma.cuota.findMany({
+    where: { socioId: session.user.socioId, estado: { in: ["PENDIENTE", "VENCIDO"] } },
+    include: { pagos: { orderBy: { fechaPago: "desc" }, take: 1 } },
+    orderBy: [{ fechaVencimiento: "asc" }, { createdAt: "asc" }],
   });
+
+  // Filtrar las que están disponibles para pagar (las que ya están en revisión no se pueden pagar)
+  const cuotasDisponibles = todasCuotasPendientes.filter(
+    (c) => c.pagos[0]?.estadoValidacion !== "PENDIENTE_REVISION"
+  );
+
+  // Validar que las cuotas a pagar sean exactamente las primeras N disponibles (sin saltos)
+  const expectedIds = cuotasDisponibles.slice(0, cuotaIds.length).map((c) => c.id);
+  const cuotaIdsSet = new Set(cuotaIds);
+  const esCorrelativo =
+    expectedIds.length === cuotaIds.length && expectedIds.every((id) => cuotaIdsSet.has(id));
+
+  if (!esCorrelativo) {
+    return NextResponse.json(
+      { error: "No podés saltearte cuotas. Debés abonar las cuotas en orden correlativo a partir de la más antigua." },
+      { status: 400 }
+    );
+  }
+
+  const cuotas = todasCuotasPendientes.filter((c) => cuotaIdsSet.has(c.id));
 
   // Validar estados de los últimos pagos de las cuotas seleccionadas
   for (const cuota of cuotas) {
