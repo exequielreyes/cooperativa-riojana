@@ -34,28 +34,49 @@ export function ReportarPagoForm({
   const [enviando, setEnviando] = useState(false);
   const [enviado, setEnviado] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  // Por defecto se preselecciona sólo la cuota más antigua (ya vienen
-  // ordenadas por fechaVencimiento asc desde el server).
-  const [cuotaIds, setCuotaIds] = useState<string[]>([cuotaPreseleccionadaId]);
+  const cuotasDisponibles = cuotas.filter((c) => !c.enRevision);
 
- const cuotasSeleccionadas = cuotas.filter((c) => cuotaIds.includes(c.id));
+  // Por defecto se preselecciona desde la primera cuota disponible hasta la cuota preseleccionada de forma correlativa
+  const [cuotaIds, setCuotaIds] = useState<string[]>(() => {
+    const idx = cuotasDisponibles.findIndex((c) => c.id === cuotaPreseleccionadaId);
+    if (idx > 0) {
+      return cuotasDisponibles.slice(0, idx + 1).map((c) => c.id);
+    }
+    return cuotasDisponibles.length > 0 ? [cuotasDisponibles[0].id] : [];
+  });
+
+  const cuotasSeleccionadas = cuotas.filter((c) => cuotaIds.includes(c.id));
   const totalMonto = cuotasSeleccionadas.reduce((acc, c) => acc + c.monto, 0);
-  const todasSeleccionadas = cuotaIds.length === cuotas.filter((c) => !c.enRevision).length;
+  const todasSeleccionadas =
+    cuotasDisponibles.length > 0 && cuotaIds.length === cuotasDisponibles.length;
 
   function toggleCuota(id: string) {
-     const cuota = cuotas.find((c) => c.id === id);
-    if (cuota?.enRevision) return; // No permitir seleccionar cuotas en revisión
-    setCuotaIds((prev) => {
-      if (prev.includes(id)) {
-        if (prev.length === 1) return prev; // no permitir dejar 0 cuotas seleccionadas
-        return prev.filter((x) => x !== id);
+    const targetIndex = cuotasDisponibles.findIndex((c) => c.id === id);
+    if (targetIndex === -1) return;
+
+    const isSelected = cuotaIds.includes(id);
+
+    if (!isSelected) {
+      // Para no saltearse ninguna cuota, se seleccionan todas desde la más antigua hasta la clickeada
+      const nuevasCuotas = cuotasDisponibles.slice(0, targetIndex + 1).map((c) => c.id);
+      setCuotaIds(nuevasCuotas);
+    } else {
+      // Si la cuota ya estaba seleccionada:
+      if (targetIndex === 0) {
+        // Clic en la primera cuota: si hay más seleccionadas, reduce a sólo la primera
+        if (cuotaIds.length > 1) {
+          setCuotaIds([cuotasDisponibles[0].id]);
+        }
+        return;
       }
-      return [...prev, id];
-    });
+      // Al desmarcar una cuota, se desmarcan también las posteriores para mantener correlatividad
+      const nuevasCuotas = cuotasDisponibles.slice(0, targetIndex).map((c) => c.id);
+      setCuotaIds(nuevasCuotas);
+    }
   }
 
   function togglePagarTodoJunto(checked: boolean) {
-    const cuotasDisponibles = cuotas.filter((c) => !c.enRevision);
+    if (cuotasDisponibles.length === 0) return;
     setCuotaIds(checked ? cuotasDisponibles.map((c) => c.id) : [cuotasDisponibles[0].id]);
   }
 
@@ -65,6 +86,18 @@ export function ReportarPagoForm({
       setError("Alguna de las cuotas seleccionadas ya tiene un pago en revisión.");
       return;
     }
+
+    // Validación de correlatividad: no se pueden saltear cuotas
+    const expectedIds = cuotasDisponibles.slice(0, cuotaIds.length).map((c) => c.id);
+    const cuotaIdsSet = new Set(cuotaIds);
+    const esCorrelativo =
+      expectedIds.length === cuotaIds.length && expectedIds.every((id) => cuotaIdsSet.has(id));
+
+    if (!esCorrelativo) {
+      setError("No podés saltearte cuotas. Debés abonar las cuotas en orden correlativo a partir de la más antigua.");
+      return;
+    }
+
     if (!archivo) {
       setError("Adjuntá el comprobante antes de continuar.");
       return;
@@ -120,11 +153,16 @@ export function ReportarPagoForm({
 
       {cuotas.length > 1 && (
         <div className="card mb-4">
-          <div className="mb-3 flex items-center justify-between">
-            <label className="text-xs text-gray-400">
-              Tenés {cuotas.length} cuotas pendientes. Elegí cuáles pagar ahora.
-            </label>
-            <label className="flex cursor-pointer items-center gap-1.5 text-xs font-medium text-primary">
+          <div className="mb-3 flex items-center justify-between gap-2">
+            <div>
+              <label className="text-xs text-gray-500 font-medium block">
+                Tenés {cuotas.length} cuotas pendientes. Elegí cuáles pagar ahora:
+              </label>
+              <span className="text-[11px] text-gray-400">
+                El pago es correlativo a partir de la más antigua (no podés saltearte cuotas).
+              </span>
+            </div>
+            <label className="flex cursor-pointer items-center gap-1.5 text-xs font-medium text-primary shrink-0">
               <input
                 type="checkbox"
                 checked={todasSeleccionadas}

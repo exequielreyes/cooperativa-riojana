@@ -16,7 +16,7 @@ export default async function ReportarPagoPage({
     prisma.cuota.findMany({
       where: { socioId, estado: { in: ["PENDIENTE", "VENCIDO"] } },
       include: { pagos: { orderBy: { fechaPago: "desc" }, take: 1 } },
-      orderBy: { fechaVencimiento: "asc" },
+      orderBy: [{ fechaVencimiento: "asc" }, { createdAt: "asc" }],
     }),
     prisma.configuracionCooperativa.findUnique({ where: { id: "singleton" } }),
   ]);
