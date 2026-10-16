@@ -58,6 +58,7 @@ model Socio {
   inscripciones   InscripcionTaller[]
   notificaciones  Notificacion[]
   pagos           Pago[]
+  talonarios      Talonario[]
   usuario         Usuario             @relation(fields: [usuarioId], references: [id])
 
   @@index([region])
@@ -119,6 +120,7 @@ model Cuota {
   createdAt        DateTime    @default(now())
   socio            Socio       @relation(fields: [socioId], references: [id])
   pagos            Pago[]
+  talonario        Talonario?
 
   @@index([socioId, estado])
   @@map("cuotas")
@@ -140,6 +142,7 @@ model Pago {
   cuota            Cuota                @relation(fields: [cuotaId], references: [id])
   socio            Socio                @relation(fields: [socioId], references: [id])
   validadoPor      Usuario?             @relation("ValidadorPago", fields: [validadoPorId], references: [id])
+  talonarios       Talonario[]
 
   @@index([socioId])
   @@index([estadoValidacion])
@@ -314,6 +317,28 @@ model Notificacion {
 
   @@index([socioId, leida])
   @@map("notificaciones")
+}
+
+model Talonario {
+  id           String   @id @default(cuid())
+  socioId      String
+  cuotaId      String   @unique
+  pagoId       String?
+  numero       String
+  mes          Int
+  anio         Int
+  periodo      String
+  concepto     String   @default("SERVICIO DE SEPELIO")
+  monto        Decimal  @db.Decimal(10, 2)
+  fechaEmision DateTime @default(now())
+  socio        Socio    @relation(fields: [socioId], references: [id], onDelete: Cascade)
+  cuota        Cuota    @relation(fields: [cuotaId], references: [id], onDelete: Cascade)
+  pago         Pago?    @relation(fields: [pagoId], references: [id], onDelete: SetNull)
+
+  @@index([socioId])
+  @@index([cuotaId])
+  @@index([pagoId])
+  @@map("talonarios")
 }
 
 enum RolUsuario {

@@ -79,7 +79,7 @@ export default async function PortalDashboardPage() {
 
           <div>
             <p className="mb-3 text-sm font-medium text-primary-dark">Acciones Rápidas</p>
-            <div className="grid gap-4 sm:grid-cols-2">
+            <div className="grid gap-4 sm:grid-cols-3">
               <Link href="/portal/pagos/reportar" className="card block bg-primary text-white hover:bg-primary-light">
                 <p className="font-medium">Reportar Pago →</p>
                 <p className="text-xs text-white/70">Realiza tu transferencia y sube aquí tu comprobante</p>
@@ -87,6 +87,10 @@ export default async function PortalDashboardPage() {
               <Link href="/portal/pagos" className="card block">
                 <p className="font-medium text-primary-dark">Historial de Cuotas →</p>
                 <p className="text-xs text-gray-500">Revisa tus pagos anteriores y estados de cuenta</p>
+              </Link>
+              <Link href="/portal/talonarios" className="card block border-l-4 border-l-primary">
+                <p className="font-medium text-primary-dark">Talonarios Digitales →</p>
+                <p className="text-xs text-gray-500">Accedé y descargá tus talonarios oficiales de sepelio</p>
               </Link>
             </div>
           </div>

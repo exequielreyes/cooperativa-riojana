@@ -3,6 +3,7 @@ import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/db";
 import { z } from "zod";
+import { generarTalonariosParaCuotas } from "@/lib/talonarios";
 
 const patchSchema = z.object({
   accion: z.enum(["APROBAR", "RECHAZAR"]),
@@ -80,6 +81,9 @@ export async function PATCH(
       where: { id: { in: cuotaIdsParaActualizar } },
       data: { estado: "PAGADO" },
     });
+
+    // Generar talonarios para cada cuota aprobada y notificar al socio
+    await generarTalonariosParaCuotas(cuotaIdsParaActualizar, pagoTarget.id);
   }
 
   return NextResponse.json({ ok: true, actualizados: idsParaActualizar.length });
