@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { useEffect, useRef, useState } from "react";
 import { useSession, signOut } from "next-auth/react";
-import { User, FileText, Wrench, Settings, LogOut, ChevronDown } from "lucide-react";
+import { User, FileText, Wrench, Settings, LogOut, ChevronDown, Ticket } from "lucide-react";
 import Image from "next/image";
 
 
@@ -20,6 +20,7 @@ const navLinks = [
 const menuSocio = [
   { href: "/portal/perfil", label: "Mi Perfil", icon: User },
   { href: "/portal/pagos", label: "Historial de Cuotas", icon: FileText },
+  { href: "/portal/talonarios", label: "Talonarios", icon: Ticket },
   { href: "/portal/talleres", label: "Talleres", icon: Wrench },
   { href: "/portal/configuracion", label: "Configuración", icon: Settings },
 ];

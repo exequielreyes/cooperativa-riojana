@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/db";
+import { generarTalonariosParaCuotas } from "@/lib/talonarios";
 
 export async function POST(
   _req: NextRequest,
@@ -35,6 +36,8 @@ export async function POST(
   });
 
   await prisma.cuota.update({ where: { id: cuota.id }, data: { estado: "PAGADO" } });
+
+  await generarTalonariosParaCuotas([cuota.id], pago.id);
 
   return NextResponse.json(pago, { status: 201 });
 }
