@@ -3,7 +3,7 @@ import Link from "next/link";
 import { prisma } from "@/lib/db";
 import { StatusBadge } from "@/components/ui/StatusBadge";
 import { AccionesSocio } from "@/components/admin/AccionesSocio";
-import { Mail, Search } from "lucide-react";
+import { Mail, Search, Download } from "lucide-react";
 import { cookies } from "next/headers";
 import { FiltrosSocios } from "@/components/admin/FiltrosSocios";
 
@@ -147,19 +147,59 @@ export default async function AdminSociosPage({
     return `?${params.toString()}`;
   }
 
+  const exportarParams = new URLSearchParams();
+  if (q) exportarParams.set("q", q);
+  if (region) exportarParams.set("region", region);
+  if (edad) exportarParams.set("edad", edad);
+  const exportarUrl = `/api/socios/exportar-al-dia?${exportarParams.toString()}`;
+
   return (
     <div>
-      <div className="mb-6 flex items-center justify-between">
+      <div className="mb-6 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
           <h1 className="text-2xl font-semibold text-primary-dark">Gestión de Socios</h1>
           <p className="text-sm text-gray-500">Administra y supervisa los miembros activos de la Cooperativa Riojana.</p>
         </div>
-        <Link href="/admin/socios/nuevo" className="btn-primary">
-          + Añadir Socio
-        </Link>
+        <div className="flex items-center gap-3">
+          {/* {filtroExtra === "al_dia" && (
+            <a
+              href={exportarUrl}
+              download
+              className="inline-flex items-center gap-2 rounded-lg bg-emerald-700 px-4 py-2 text-sm font-semibold text-white shadow-sm hover:bg-emerald-800 transition-colors"
+            >
+              <Download size={16} />
+              <span>Descargar Excel</span>
+            </a>
+          )} */}
+          <Link href="/admin/socios/nuevo" className="btn-primary">
+            + Añadir Socio
+          </Link>
+        </div>
       </div>
 
       <FiltrosSocios regiones={regiones.filter((r) => r.region).map((r) => r.region!)} />
+
+      {filtroExtra === "al_dia" && (
+        <div className="mb-3 flex flex-wrap items-center justify-between gap-2 rounded-xl border border-emerald-200 bg-emerald-50/70 px-4 py-2.5">
+          <div className="flex items-center gap-2">
+            <span className="flex h-2.5 w-2.5 rounded-full bg-emerald-500"></span>
+            <p className="text-sm font-semibold text-emerald-900">
+              Padrón de Socios al Día
+            </p>
+            <span className="text-xs text-emerald-700 font-medium">
+              ({total} {total === 1 ? "socio" : "socios"} con cuotas al día)
+            </span>
+          </div>
+          <a
+            href={exportarUrl}
+            download
+            className="inline-flex items-center gap-1.5 rounded-lg bg-emerald-700 px-3.5 py-1.5 text-xs font-semibold text-white shadow hover:bg-emerald-800 transition-colors"
+          >
+            <Download size={14} />
+            <span>Descargar Excel</span>
+          </a>
+        </div>
+      )}
 
       <div className="card overflow-x-auto p-0">
         <table className="w-full text-sm">
@@ -368,8 +408,13 @@ export default async function AdminSociosPage({
         </div>
         <div>
           <p className="font-medium text-primary-dark">
-            Notificación Masiva <span className="badge bg-primary/10 text-primary ml-1">Premium</span>
+            Notificación Masiva <span className="badge bg-primary/10 text-primary ml-1">
+            <span className="badge bg-amber-500/10 text-amber-600 text-xs px-2 py-0.5 rounded-full font-medium">
+          Próximamente
+        </span>
+            </span>
           </p>
+          
           <p className="text-xs text-gray-400">Envío de circulares y avisos vía SMS/Email.</p>
         </div>
       </div>

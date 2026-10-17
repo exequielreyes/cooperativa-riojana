@@ -49,8 +49,10 @@ export function FiltrosSocios({ regiones }: { regiones: string[] }) {
   }
 
   function onEstadoChange(value: string) {
+    const nextFiltroExtra = filtroExtra === "al_dia" ? "" : filtroExtra;
     setEstado(value);
-    actualizarUrl({ q, region, estado: value, edad, filtroExtra, mesCumpleanos });
+    if (filtroExtra === "al_dia") setFiltroExtra("");
+    actualizarUrl({ q, region, estado: value, edad, filtroExtra: nextFiltroExtra, mesCumpleanos });
   }
 
   function onEdadChange(value: string) {
@@ -94,10 +96,25 @@ export function FiltrosSocios({ regiones }: { regiones: string[] }) {
   }
 
   function toggleFiltroExtra(filtro: string) {
-    if (filtroExtra === filtro) {
-      onFiltroExtraChange("");
+    if (filtro === "al_dia") {
+      if (filtroExtra === "al_dia") {
+        setFiltroExtra("");
+        actualizarUrl({ q, region, estado, edad, filtroExtra: "", mesCumpleanos });
+      } else {
+        // Al seleccionar "al_dia", deseleccionamos estado para cerrar Inactivo y sus sub-motivos
+        setFiltroExtra("al_dia");
+        setEstado("");
+        setMesCumpleanos("");
+        actualizarUrl({ q, region, estado: "", edad, filtroExtra: "al_dia", mesCumpleanos: "" });
+      }
     } else {
-      onFiltroExtraChange(filtro);
+      if (filtroExtra === filtro) {
+        setFiltroExtra("");
+        actualizarUrl({ q, region, estado, edad, filtroExtra: "", mesCumpleanos });
+      } else {
+        setFiltroExtra(filtro);
+        actualizarUrl({ q, region, estado, edad, filtroExtra: filtro, mesCumpleanos });
+      }
     }
   }
 
@@ -207,9 +224,8 @@ export function FiltrosSocios({ regiones }: { regiones: string[] }) {
           
           <button
             onClick={() => toggleEstado("")}
-            disabled={filtroExtra === "al_dia"}
-            className={`flex items-center gap-1.5 rounded-full px-3 py-1.5 text-sm font-medium transition-colors ${filtroExtra === "al_dia" ? "opacity-50 cursor-not-allowed" : ""} ${
-              estado === ""
+            className={`flex items-center gap-1.5 rounded-full px-3 py-1.5 text-sm font-medium transition-colors ${
+              estado === "" && filtroExtra !== "al_dia"
                 ? "bg-[#0f4c4c] text-white"
                 : "bg-gray-100 text-gray-600 hover:bg-gray-200"
             }`}
@@ -219,9 +235,8 @@ export function FiltrosSocios({ regiones }: { regiones: string[] }) {
           
           <button
             onClick={() => toggleEstado("ACTIVO")}
-            disabled={filtroExtra === "al_dia"}
-            className={`flex items-center gap-1.5 rounded-full px-3 py-1.5 text-sm font-medium transition-colors ${filtroExtra === "al_dia" ? "opacity-50 cursor-not-allowed" : ""} ${
-              estado === "ACTIVO"
+            className={`flex items-center gap-1.5 rounded-full px-3 py-1.5 text-sm font-medium transition-colors ${
+              estado === "ACTIVO" && filtroExtra !== "al_dia"
                 ? "bg-green-100 text-green-700 border border-green-200"
                 : "bg-gray-100 text-gray-600 hover:bg-gray-200 border border-transparent"
             }`}
@@ -232,9 +247,8 @@ export function FiltrosSocios({ regiones }: { regiones: string[] }) {
           
           <button
             onClick={() => toggleEstado("PENDIENTE")}
-            disabled={filtroExtra === "al_dia"}
-            className={`flex items-center gap-1.5 rounded-full px-3 py-1.5 text-sm font-medium transition-colors ${filtroExtra === "al_dia" ? "opacity-50 cursor-not-allowed" : ""} ${
-              estado === "PENDIENTE"
+            className={`flex items-center gap-1.5 rounded-full px-3 py-1.5 text-sm font-medium transition-colors ${
+              estado === "PENDIENTE" && filtroExtra !== "al_dia"
                 ? "bg-yellow-100 text-yellow-700 border border-yellow-200"
                 : "bg-gray-100 text-gray-600 hover:bg-gray-200 border border-transparent"
             }`}
@@ -245,9 +259,8 @@ export function FiltrosSocios({ regiones }: { regiones: string[] }) {
           
           <button
             onClick={() => toggleEstado("INACTIVO")}
-            disabled={filtroExtra === "al_dia"}
-            className={`flex items-center gap-1.5 rounded-full px-3 py-1.5 text-sm font-medium transition-colors ${filtroExtra === "al_dia" ? "opacity-50 cursor-not-allowed" : ""} ${
-              estado.startsWith("INACTIVO")
+            className={`flex items-center gap-1.5 rounded-full px-3 py-1.5 text-sm font-medium transition-colors ${
+              estado.startsWith("INACTIVO") && filtroExtra !== "al_dia"
                 ? "bg-gray-200 text-gray-800 border border-gray-300"
                 : "bg-gray-100 text-gray-600 hover:bg-gray-200 border border-transparent"
             }`}
@@ -320,8 +333,8 @@ export function FiltrosSocios({ regiones }: { regiones: string[] }) {
         </div>
       </div>
 
-      {/* SUB-ESTADOS INACTIVOS (Opcional, se muestra si eligen inactivo) */}
-      {estado.startsWith("INACTIVO") && (
+      {/* SUB-ESTADOS INACTIVOS (Opcional, se muestra si eligen inactivo y no está al día) */}
+      {estado.startsWith("INACTIVO") && filtroExtra !== "al_dia" && (
         <div className="mt-4 flex flex-wrap items-center gap-2 rounded-lg bg-gray-50 p-3">
           <span className="text-xs text-gray-500 mr-2">Motivo de baja:</span>
           <button
