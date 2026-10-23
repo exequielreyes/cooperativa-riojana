@@ -3,6 +3,9 @@
 import { useEffect, useState } from "react";
 import { GestorRoles } from "./GestorRoles";
 import { useRouter } from "next/navigation";
+import { ConfirmModal } from "@/components/ui/ConfirmModal";
+
+const PAGE_SIZE = 7;
 
 export function GestorCuentasAvanzado({ usuarios }: { usuarios: any[] }) {
   const [vista, setVista] = useState<"profesor" | "promotor_cobrador" | null>(null);
@@ -19,6 +22,10 @@ export function GestorCuentasAvanzado({ usuarios }: { usuarios: any[] }) {
   
   const [filtroRol, setFiltroRol] = useState<string>("TODOS");
   const [busqueda, setBusqueda] = useState<string>("");
+  const [page, setPage] = useState<number>(1);
+
+  const [usuarioAEliminar, setUsuarioAEliminar] = useState<any | null>(null);
+  const [eliminando, setEliminando] = useState(false);
 
   const router = useRouter();
 
@@ -75,20 +82,23 @@ export function GestorCuentasAvanzado({ usuarios }: { usuarios: any[] }) {
     setTimeout(() => setCopiado(false), 2000);
   }
 
-  async function eliminarUsuario(id: string) {
-    if (!confirm("¿Seguro que deseas eliminar esta cuenta?")) return;
-    
+  async function confirmarEliminacion() {
+    if (!usuarioAEliminar) return;
+    setEliminando(true);
     try {
-      const res = await fetch(`/api/usuarios/${id}`, {
+      const res = await fetch(`/api/usuarios/${usuarioAEliminar.id}`, {
         method: "DELETE",
       });
       if (res.ok) {
+        setUsuarioAEliminar(null);
         router.refresh();
       } else {
         alert("Error al eliminar la cuenta");
       }
     } catch {
       alert("Error de conexión");
+    } finally {
+      setEliminando(false);
     }
   }
 
@@ -104,6 +114,14 @@ export function GestorCuentasAvanzado({ usuarios }: { usuarios: any[] }) {
 
     return coincideRol && coincideBusqueda;
   });
+
+  const total = usuariosFiltrados.length;
+  const totalPaginas = Math.max(1, Math.ceil(total / PAGE_SIZE));
+  const paginaActual = Math.min(page, totalPaginas);
+  const usuariosPaginados = usuariosFiltrados.slice(
+    (paginaActual - 1) * PAGE_SIZE,
+    paginaActual * PAGE_SIZE
+  );
 
   return (
     <div className="space-y-6">
@@ -220,12 +238,18 @@ export function GestorCuentasAvanzado({ usuarios }: { usuarios: any[] }) {
             className="input sm:max-w-xs"
             placeholder="Buscar por nombre, correo, DNI o ID..."
             value={busqueda}
-            onChange={(e) => setBusqueda(e.target.value)}
+            onChange={(e) => {
+              setBusqueda(e.target.value);
+              setPage(1);
+            }}
           />
           <select
             className="input bg-white sm:max-w-[200px]"
             value={filtroRol}
-            onChange={(e) => setFiltroRol(e.target.value)}
+            onChange={(e) => {
+              setFiltroRol(e.target.value);
+              setPage(1);
+            }}
           >
             <option value="TODOS">Todos los roles</option>
             <option value="PROFESOR">Profesor</option>
@@ -247,7 +271,7 @@ export function GestorCuentasAvanzado({ usuarios }: { usuarios: any[] }) {
               </tr>
             </thead>
             <tbody>
-              {usuariosFiltrados.map(u => (
+              {usuariosPaginados.map(u => (
                 <tr key={u.id} className="border-t border-surface-border">
                   <td className="py-2.5 text-gray-500">{u.codigoIdentificador || "-"}</td>
                   <td className="py-2.5">{u.nombre}</td>
@@ -257,13 +281,16 @@ export function GestorCuentasAvanzado({ usuarios }: { usuarios: any[] }) {
                     <span className="badge bg-primary/10 text-primary">{u.rol}</span>
                   </td>
                   <td className="py-2.5">
-                    <button onClick={() => eliminarUsuario(u.id)} className="text-red-500 hover:text-red-700 text-xs font-semibold">
+                    <button
+                      onClick={() => setUsuarioAEliminar(u)}
+                      className="text-red-500 hover:text-red-700 text-xs font-semibold"
+                    >
                       Eliminar
                     </button>
                   </td>
                 </tr>
               ))}
-              {usuariosFiltrados.length === 0 && (
+              {usuariosPaginados.length === 0 && (
                 <tr>
                   <td colSpan={6} className="py-4 text-center text-gray-400">
                     No hay usuarios para mostrar.
@@ -273,7 +300,84 @@ export function GestorCuentasAvanzado({ usuarios }: { usuarios: any[] }) {
             </tbody>
           </table>
         </div>
+
+        {total > 0 && (
+          <div className="mt-4 flex flex-col items-center justify-between gap-4 border-t border-surface-border pt-4 sm:flex-row">
+            <span className="text-sm text-gray-500">
+              Mostrando {(paginaActual - 1) * PAGE_SIZE + 1}-{Math.min(paginaActual * PAGE_SIZE, total)} de {total} cuentas
+            </span>
+            <nav aria-label="Paginación" className="flex items-center gap-2">
+              <button
+                type="button"
+                onClick={() => setPage(Math.max(1, paginaActual - 1))}
+                disabled={paginaActual === 1}
+                className="flex h-9 w-9 items-center justify-center rounded-lg border border-surface-border text-gray-500 transition-colors hover:bg-surface-muted disabled:pointer-events-none disabled:opacity-40"
+              >
+                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="m15 18-6-6 6-6"/></svg>
+              </button>
+
+              {(() => {
+                const delta = 1;
+                const range: (number | "...")[] = [];
+                const start = Math.max(2, paginaActual - delta);
+                const end = Math.min(totalPaginas - 1, paginaActual + delta);
+
+                range.push(1);
+                if (start > 2) range.push("...");
+                for (let i = start; i <= end; i++) range.push(i);
+                if (end < totalPaginas - 1) range.push("...");
+                if (totalPaginas > 1) range.push(totalPaginas);
+
+                return range.map((p, idx) =>
+                  p === "..." ? (
+                    <span key={`dots-${idx}`} className="px-1 text-sm text-gray-400">
+                      …
+                    </span>
+                  ) : (
+                    <button
+                      type="button"
+                      key={p}
+                      onClick={() => setPage(p as number)}
+                      aria-current={p === paginaActual ? "page" : undefined}
+                      className={`flex h-9 w-9 items-center justify-center rounded-lg text-sm font-medium transition-colors ${
+                        p === paginaActual
+                          ? "bg-primary text-white"
+                          : "border border-surface-border text-gray-600 hover:bg-surface-muted"
+                      }`}
+                    >
+                      {p}
+                    </button>
+                  )
+                );
+              })()}
+
+              <button
+                type="button"
+                onClick={() => setPage(Math.min(totalPaginas, paginaActual + 1))}
+                disabled={paginaActual === totalPaginas}
+                className="flex h-9 w-9 items-center justify-center rounded-lg border border-surface-border text-gray-500 transition-colors hover:bg-surface-muted disabled:pointer-events-none disabled:opacity-40"
+              >
+                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="m9 18 6-6-6-6"/></svg>
+              </button>
+            </nav>
+          </div>
+        )}
       </div>
+
+      <ConfirmModal
+        open={Boolean(usuarioAEliminar)}
+        title="¿Eliminar esta cuenta?"
+        description={
+          usuarioAEliminar
+            ? `Se eliminará de forma permanente la cuenta de ${usuarioAEliminar.nombre || usuarioAEliminar.email} (${usuarioAEliminar.rol}). Esta acción no se puede deshacer.`
+            : ""
+        }
+        confirmLabel="Sí, eliminar"
+        tone="danger"
+        loading={eliminando}
+        onConfirm={confirmarEliminacion}
+        onCancel={() => !eliminando && setUsuarioAEliminar(null)}
+      />
     </div>
   );
 }
