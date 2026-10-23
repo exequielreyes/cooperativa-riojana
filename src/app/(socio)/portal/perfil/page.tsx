@@ -157,7 +157,7 @@ export default async function PerfilPage() {
                   <div>
                     <h3 className="font-semibold text-primary-dark group-hover:text-primary">Mi Grupo Familiar</h3>
                     <p className="text-sm text-gray-600">
-                      {socio.grupoFamiliar.length} adherente{socio.grupoFamiliar.length === 1 ? "" : "s"} registrado{socio.grupoFamiliar.length === 1 ? "" : "s"}
+                      {socio.grupoFamiliar.filter((f) => f.activo !== false).length} adherente(s) activo(s){socio.grupoFamiliar.some((f) => f.activo === false) ? ' (' + socio.grupoFamiliar.filter((f) => f.activo === false).length + ' baja/egreso)' : ''}
                     </p>
                   </div>
                 </div>

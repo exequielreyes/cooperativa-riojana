@@ -76,10 +76,14 @@ model GrupoFamiliar {
   fechaNacimiento DateTime?
   email           String?
   telefono        String?
+  activo          Boolean   @default(true)
+  motivoBaja      String?
+  fechaBaja       DateTime?
   createdAt       DateTime  @default(now())
   socio           Socio     @relation(fields: [socioId], references: [id], onDelete: Cascade)
 
   @@index([socioId])
+  @@index([activo])
   @@map("grupo_familiar")
 }
 

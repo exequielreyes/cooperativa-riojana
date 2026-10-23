@@ -315,7 +315,7 @@ export default async function AdminSociosPage({
                 )}
               </tr>
               {filtroExtra === "al_dia" && socio.grupoFamiliar
-                ?.filter((fam) => !fam.parentesco.includes("Titular Anterior"))
+                ?.filter((fam) => fam.activo !== false && !fam.parentesco.includes("Titular Anterior"))
                 .map((fam) => (
                 <tr key={fam.id} className="border-b border-gray-50 bg-gray-50/20 last:border-0">
                   <td className="px-6 py-3 text-gray-400"></td>

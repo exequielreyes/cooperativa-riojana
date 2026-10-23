@@ -5,6 +5,7 @@ import { prisma } from "@/lib/db";
 import { StatusBadge } from "@/components/ui/StatusBadge";
 import { MarcarPagadoEfectivo } from "@/components/admin/MarcarPagadoEfectivo";
 import { formatCurrency, formatDate } from "@/lib/utils";
+import { BotonBajaFamiliar } from "@/components/admin/BotonBajaFamiliar";
 import { User, Phone, Mail, MapPin, Briefcase, Calendar, CreditCard, Users, Edit, AlertCircle } from "lucide-react";
 
 const estadoLabel: Record<string, string> = { ACTIVO: "Activo", PENDIENTE: "Pendiente", INACTIVO: "Inactivo" };
