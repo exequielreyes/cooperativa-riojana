@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { StatusBadge } from "@/components/ui/StatusBadge";
-import { UserMinus, History, Users, AlertCircle } from "lucide-react";
+import { UserMinus, History, Users, AlertCircle, UserCheck } from "lucide-react";
 
 export interface Asociado {
   id: string;
@@ -41,8 +41,13 @@ export function GrupoFamiliarManager({
   const [otroMotivo, setOtroMotivo] = useState("");
   const [errorBaja, setErrorBaja] = useState<string | null>(null);
 
-  const activos = asociados.filter((a) => a.activo !== false);
-  const egresados = asociados.filter((a) => a.activo === false);
+  // Modal y estado de reactivación de integrante
+  const [asociadoParaReactivar, setAsociadoParaReactivar] = useState<Asociado | null>(null);
+  const [errorReactivar, setErrorReactivar] = useState<string | null>(null);
+
+  const esTitularAnterior = (a: Asociado) => a.parentesco?.startsWith("Titular Anterior");
+  const activos = asociados.filter((a) => a.activo !== false && !esTitularAnterior(a));
+  const egresados = asociados.filter((a) => a.activo === false || esTitularAnterior(a));
 
   async function guardarAsociado(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
@@ -111,7 +116,13 @@ export function GrupoFamiliarManager({
 
       if (!res.ok) {
         const data = await res.json().catch(() => ({}));
-        throw new Error(data.error || "No se pudo registrar la baja.");
+        const mensaje =
+          typeof data.error === "string"
+            ? data.error
+            : data.error?.formErrors?.[0] ||
+              (data.error?.fieldErrors && (Object.values(data.error.fieldErrors)[0] as any)?.[0]) ||
+              "No se pudo registrar la baja.";
+        throw new Error(mensaje);
       }
 
       const fechaActualIso = new Date().toISOString();
@@ -133,6 +144,47 @@ export function GrupoFamiliarManager({
       setOtroMotivo("");
     } catch (err: any) {
       setErrorBaja(err.message || "Error al procesar la baja");
+    } finally {
+      setEnviando(false);
+    }
+  }
+
+  async function confirmarReactivacion() {
+    if (!asociadoParaReactivar) return;
+    setEnviando(true);
+    setErrorReactivar(null);
+
+    try {
+      const res = await fetch(`/api/grupo-familiar/${asociadoParaReactivar.id}/reactivar`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+      });
+
+      if (!res.ok) {
+        const data = await res.json().catch(() => ({}));
+        const mensaje =
+          typeof data.error === "string"
+            ? data.error
+            : "No se pudo reactivar el integrante.";
+        throw new Error(mensaje);
+      }
+
+      setAsociados((prev) =>
+        prev.map((a) =>
+          a.id === asociadoParaReactivar.id
+            ? {
+                ...a,
+                activo: true,
+                motivoBaja: null,
+                fechaBaja: null,
+              }
+            : a
+        )
+      );
+
+      setAsociadoParaReactivar(null);
+    } catch (err: any) {
+      setErrorReactivar(err.message || "Error al reactivar el integrante");
     } finally {
       setEnviando(false);
     }
@@ -301,32 +353,26 @@ export function GrupoFamiliarManager({
                 )}
               </div>
               <div className="flex items-center gap-3">
-                {asociado.parentesco.startsWith("Titular Anterior") ? (
-                  <StatusBadge label="Inactivo" tone="neutral" />
-                ) : (
-                  <>
-                    <button
-                      type="button"
-                      className="text-sm text-primary hover:underline font-medium"
-                      onClick={() => iniciarEdicion(asociado)}
-                    >
-                      Editar
-                    </button>
-                    <button
-                      type="button"
-                      className="inline-flex items-center gap-1 text-sm font-medium text-status-danger hover:underline"
-                      onClick={() => {
-                        setAsociadoParaBaja(asociado);
-                        setMotivoBaja("Baja voluntaria");
-                        setOtroMotivo("");
-                        setErrorBaja(null);
-                      }}
-                    >
-                      <UserMinus size={14} />
-                      Dar de baja / Egreso
-                    </button>
-                  </>
-                )}
+                <button
+                  type="button"
+                  className="text-sm text-primary hover:underline font-medium"
+                  onClick={() => iniciarEdicion(asociado)}
+                >
+                  Editar
+                </button>
+                <button
+                  type="button"
+                  className="inline-flex items-center gap-1 text-sm font-medium text-status-danger hover:underline"
+                  onClick={() => {
+                    setAsociadoParaBaja(asociado);
+                    setMotivoBaja("Baja voluntaria");
+                    setOtroMotivo("");
+                    setErrorBaja(null);
+                  }}
+                >
+                  <UserMinus size={14} />
+                  Dar de baja / Egreso
+                </button>
               </div>
             </div>
           ))}
@@ -350,6 +396,14 @@ export function GrupoFamiliarManager({
                   })
                 : "—";
 
+              const motivoMostrar = asociado.motivoBaja || 
+                (asociado.parentesco.includes("Baja:") 
+                  ? asociado.parentesco.split("Baja:")[1].replace(")", "").trim() 
+                  : "Baja de titularidad");
+
+              const esTitular = esTitularAnterior(asociado);
+              const puedeReactivar = !esTitular && asociado.motivoBaja?.startsWith("Baja voluntaria");
+
               return (
                 <div
                   key={asociado.id}
@@ -360,7 +414,7 @@ export function GrupoFamiliarManager({
                       <p className="font-semibold text-gray-700">
                         {asociado.nombre} {asociado.apellido}
                       </p>
-                      <StatusBadge label="Baja Registrada" tone="neutral" />
+                      <StatusBadge label={esTitular ? "Inactivo" : "Baja Registrada"} tone="neutral" />
                     </div>
                     <p className="text-xs text-gray-500 mt-1">
                       <span className="font-medium">{asociado.parentesco}</span>
@@ -368,7 +422,7 @@ export function GrupoFamiliarManager({
                     </p>
                     <div className="mt-2 flex flex-wrap items-center gap-2 text-xs">
                       <span className="rounded bg-rose-50 border border-rose-200 px-2 py-0.5 font-medium text-rose-700">
-                        Motivo: {asociado.motivoBaja || "No especificado"}
+                        Motivo: {motivoMostrar}
                       </span>
                       <span className="text-gray-400">•</span>
                       <span className="text-gray-500">
@@ -377,9 +431,25 @@ export function GrupoFamiliarManager({
                     </div>
                   </div>
 
-                  <div className="text-right text-xs text-gray-400">
-                    <p>Datos históricos protegidos</p>
-                    <p className="text-[11px] text-gray-400 mt-0.5">No afecta al titular ni al resto del grupo</p>
+                  <div className="flex flex-col sm:items-end gap-2 text-xs text-gray-400">
+                    {puedeReactivar ? (
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setAsociadoParaReactivar(asociado);
+                          setErrorReactivar(null);
+                        }}
+                        className="inline-flex items-center gap-1.5 rounded-lg border border-emerald-300 bg-emerald-50 px-3 py-1.5 text-xs font-semibold text-emerald-700 hover:bg-emerald-100 transition-colors shadow-sm"
+                      >
+                        <UserCheck size={14} />
+                        Reactivar integrante
+                      </button>
+                    ) : (
+                      <>
+                        <p>Datos históricos protegidos</p>
+                        <p className="text-[11px] text-gray-400 mt-0.5">No afecta al titular ni al resto del grupo</p>
+                      </>
+                    )}
                   </div>
                 </div>
               );
@@ -430,12 +500,9 @@ export function GrupoFamiliarManager({
                 className="input text-sm"
                 disabled={enviando}
               >
-                <option value="Baja voluntaria">Baja voluntaria / Renuncia</option>
-                <option value="Mayoría de edad / Independización">Mayoría de edad / Independización</option>
-                <option value="Cambio de cobertura social">Cambio de cobertura social</option>
+                <option value="Baja voluntaria">Baja voluntaria</option>
                 <option value="Fallecimiento">Fallecimiento</option>
-                <option value="Emigración / Cambio de domicilio">Emigración / Cambio de domicilio</option>
-                <option value="OTRO">Otro motivo (especificar)...</option>
+                <option value="OTRO">Otro motivo</option>
               </select>
 
               {motivoBaja === "OTRO" && (
@@ -473,6 +540,66 @@ export function GrupoFamiliarManager({
                 disabled={enviando}
               >
                 {enviando ? "Registrando..." : "Confirmar Baja"}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* MODAL PARA CONFIRMAR REACTIVACIÓN */}
+      {asociadoParaReactivar && (
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 px-4"
+          onClick={() => !enviando && setAsociadoParaReactivar(null)}
+        >
+          <div
+            className="card w-full max-w-md space-y-4 shadow-xl"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="flex items-start gap-3">
+              <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-emerald-100 text-emerald-600">
+                <UserCheck size={22} />
+              </div>
+              <div>
+                <h3 className="font-bold text-gray-900">
+                  Reactivar integrante
+                </h3>
+                <p className="text-xs text-gray-500 mt-1">
+                  Estás por reactivar a{" "}
+                  <strong>
+                    {asociadoParaReactivar.nombre} {asociadoParaReactivar.apellido}
+                  </strong>{" "}
+                  ({asociadoParaReactivar.parentesco}).
+                </p>
+              </div>
+            </div>
+
+            <div className="rounded-lg bg-emerald-50 border border-emerald-200 p-3 text-xs text-emerald-800 leading-relaxed">
+              El integrante volverá a figurar en la lista de <strong>Integrantes Activos</strong> conservando todos los datos que ya tenía registrados (DNI, parentesco, contacto y fecha de nacimiento).
+            </div>
+
+            {errorReactivar && (
+              <p className="rounded bg-rose-50 border border-rose-200 p-2 text-xs text-rose-600">
+                {errorReactivar}
+              </p>
+            )}
+
+            <div className="flex items-center justify-end gap-2 pt-2 border-t border-gray-100">
+              <button
+                type="button"
+                className="rounded-lg border border-gray-200 px-4 py-2 text-sm text-gray-600 hover:bg-gray-50"
+                onClick={() => setAsociadoParaReactivar(null)}
+                disabled={enviando}
+              >
+                Cancelar
+              </button>
+              <button
+                type="button"
+                className="rounded-lg bg-emerald-600 px-4 py-2 text-sm font-semibold text-white hover:bg-emerald-700 disabled:opacity-50"
+                onClick={confirmarReactivacion}
+                disabled={enviando}
+              >
+                {enviando ? "Reactivando..." : "Confirmar Reactivación"}
               </button>
             </div>
           </div>

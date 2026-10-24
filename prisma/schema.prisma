@@ -16,6 +16,8 @@ model Usuario {
   createdAt        DateTime             @default(now())
   updatedAt        DateTime             @updatedAt
   nombre           String?
+  codigoIdentificador String?
+  dni              String?
   noticias         Noticia[]            @relation("AutorNoticia")
   pagosValidados   Pago[]               @relation("ValidadorPago")
   resetTokens      PasswordResetToken[]
@@ -350,6 +352,8 @@ enum RolUsuario {
   SUPER_ADMIN
   EDITOR_CONTENIDOS
   PROFESOR
+  PROMOTOR
+  COBRADOR
 }
 
 enum EstadoSocio {

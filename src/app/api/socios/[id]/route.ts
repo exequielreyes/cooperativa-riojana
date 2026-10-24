@@ -229,6 +229,9 @@ export async function PATCH(request: NextRequest, { params }: { params: { id: st
           fechaNacimiento: socioActual.fechaNacimiento,
           telefono: socioActual.telefono,
           email: socioActual.email,
+          activo: false,
+          motivoBaja: motivoFinal || "Baja voluntaria",
+          fechaBaja: new Date(),
         },
       });
 

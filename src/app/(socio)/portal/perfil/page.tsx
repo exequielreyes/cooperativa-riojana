@@ -157,7 +157,7 @@ export default async function PerfilPage() {
                   <div>
                     <h3 className="font-semibold text-primary-dark group-hover:text-primary">Mi Grupo Familiar</h3>
                     <p className="text-sm text-gray-600">
-                      {socio.grupoFamiliar.filter((f) => f.activo !== false).length} adherente(s) activo(s){socio.grupoFamiliar.some((f) => f.activo === false) ? ' (' + socio.grupoFamiliar.filter((f) => f.activo === false).length + ' baja/egreso)' : ''}
+                      {socio.grupoFamiliar.filter((f) => f.activo !== false && !f.parentesco.startsWith("Titular Anterior")).length} adherente(s) activo(s){socio.grupoFamiliar.some((f) => f.activo === false || f.parentesco.startsWith("Titular Anterior")) ? ' (' + socio.grupoFamiliar.filter((f) => f.activo === false || f.parentesco.startsWith("Titular Anterior")).length + ' baja/egreso)' : ''}
                     </p>
                   </div>
                 </div>

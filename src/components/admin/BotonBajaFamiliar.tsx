@@ -44,7 +44,13 @@ export function BotonBajaFamiliar({
 
       if (!res.ok) {
         const data = await res.json().catch(() => ({}));
-        throw new Error(data.error || "No se pudo registrar la baja.");
+        const mensaje =
+          typeof data.error === "string"
+            ? data.error
+            : data.error?.formErrors?.[0] ||
+              (data.error?.fieldErrors && (Object.values(data.error.fieldErrors)[0] as any)?.[0]) ||
+              "No se pudo registrar la baja.";
+        throw new Error(mensaje);
       }
 
       setModalAbierto(false);
@@ -117,12 +123,9 @@ export function BotonBajaFamiliar({
                 className="w-full rounded-lg border border-gray-300 p-2 text-sm focus:border-rose-500 focus:outline-none"
                 disabled={enviando}
               >
-                <option value="Baja voluntaria">Baja voluntaria / Renuncia</option>
-                <option value="Mayoría de edad / Independización">Mayoría de edad / Independización</option>
-                <option value="Cambio de cobertura social">Cambio de cobertura social</option>
+                <option value="Baja voluntaria">Baja voluntaria</option>
                 <option value="Fallecimiento">Fallecimiento</option>
-                <option value="Emigración / Cambio de domicilio">Emigración / Cambio de domicilio</option>
-                <option value="OTRO">Otro motivo (especificar)...</option>
+                <option value="OTRO">Otro motivo</option>
               </select>
 
               {motivoBaja === "OTRO" && (

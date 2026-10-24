@@ -46,17 +46,26 @@ export async function PATCH(
   const body = await request.json().catch(() => ({}));
   const parsed = darBajaAsociadoSchema.safeParse(body);
   if (!parsed.success) {
-    return NextResponse.json({ error: parsed.error.flatten() }, { status: 400 });
+    const errorMsg = parsed.error.errors[0]?.message || "Datos inválidos";
+    return NextResponse.json({ error: errorMsg }, { status: 400 });
   }
 
-  const actualizado = await prisma.grupoFamiliar.update({
-    where: { id: params.id },
-    data: {
-      activo: false,
-      motivoBaja: parsed.data.motivoBaja,
-      fechaBaja: new Date(),
-    },
-  });
+  try {
+    const actualizado = await prisma.grupoFamiliar.update({
+      where: { id: params.id },
+      data: {
+        activo: false,
+        motivoBaja: parsed.data.motivoBaja,
+        fechaBaja: new Date(),
+      },
+    });
 
-  return NextResponse.json({ ok: true, familiar: actualizado });
+    return NextResponse.json({ ok: true, familiar: actualizado });
+  } catch (error: any) {
+    console.error("Error al registrar baja de familiar:", error);
+    return NextResponse.json(
+      { error: "No se pudo registrar la baja en la base de datos." },
+      { status: 500 }
+    );
+  }
 }
