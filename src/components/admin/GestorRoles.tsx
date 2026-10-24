@@ -1,14 +1,17 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { useRouter } from "next/navigation";
 
 export function GestorRoles() {
   const [nombre, setNombre] = useState("");
   const [email, setEmail] = useState("");
+  const [dni, setDni] = useState("");
   const [creando, setCreando] = useState(false);
   const [mensajeError, setMensajeError] = useState<string | null>(null);
   const [passwordGenerada, setPasswordGenerada] = useState<string | null>(null);
   const [copiado, setCopiado] = useState(false);
+  const router = useRouter();
 
 
 useEffect(() => {
@@ -35,19 +38,22 @@ useEffect(() => {
       const res = await fetch("/api/usuarios", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ nombre, email }),
+        body: JSON.stringify({ nombre, email, dni }),
       });
 
       const data = await res.json();
 
       if (!res.ok) {
-        setMensajeError(data.error || "Ocurrió un error al crear la cuenta.");
+        const msg = typeof data.error === "string" ? data.error : "Ocurrió un error al crear la cuenta.";
+        setMensajeError(msg);
         return;
       }
 
       setPasswordGenerada(data.passwordTemporal);
       setNombre("");
       setEmail("");
+      setDni("");
+      router.refresh();
     } catch {
       setMensajeError("Error de conexión con el servidor.");
     } finally {
@@ -81,6 +87,13 @@ useEffect(() => {
             type="email"
             value={email}
             onChange={(e) => setEmail(e.target.value)}
+            required
+          />
+          <input
+            className="input"
+            placeholder="DNI"
+            value={dni}
+            onChange={(e) => setDni(e.target.value)}
             required
           />
         </div>

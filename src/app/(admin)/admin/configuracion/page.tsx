@@ -1,17 +1,30 @@
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
-import { GestorRoles } from "@/components/admin/GestorRoles";
+import { prisma } from "@/lib/db";
+import { GestorCuentasAvanzado } from "@/components/admin/GestorCuentasAvanzado";
 
-// const roles = [
-//   { nombre: "Ricardo Martínez", rol: "Super Admin", ultimoAcceso: "Hoy, 09:12" },
-//   { nombre: "Elena López", rol: "Editor Contenidos", ultimoAcceso: "Ayer, 18:45" },
-// ];
-
-// TODO: reemplazar por prisma.usuario.findMany({ where: { rol: { not: "SOCIO" } } })
 export default async function AdminConfiguracionPage() {
 const session = await getServerSession(authOptions);
 const esSuperAdmin = session?.user.rol === "SUPER_ADMIN";
 
+const usuarios = await prisma.usuario.findMany({
+  where: {
+    rol: {
+      in: ["PROFESOR", "PROMOTOR", "COBRADOR"]
+    }
+  },
+  select: {
+    id: true,
+    nombre: true,
+    dni: true,
+    codigoIdentificador: true,
+    email: true,
+    rol: true,
+  },
+  orderBy: {
+    createdAt: "desc"
+  }
+});
 
   return (
     <div className="mx-auto max-w-3xl space-y-6">
@@ -28,45 +41,9 @@ const esSuperAdmin = session?.user.rol === "SUPER_ADMIN";
         </div>
       </div>
 
-      {/* <div className="card">
-        <div className="mb-4 flex items-center justify-between">
-          <p className="font-medium text-primary-dark">Gestión de Roles</p>
-          <button className="btn-secondary text-sm">+ Invitar Admin</button>
-        </div>
-        <table className="w-full text-sm">
-          <thead>
-            <tr className="text-left text-xs text-gray-400">
-              <th className="pb-2 font-normal">Usuario</th>
-              <th className="pb-2 font-normal">Rol</th>
-              <th className="pb-2 font-normal">Último Acceso</th>
-            </tr>
-          </thead>
-          <tbody>
-            {roles.map((r) => (
-              <tr key={r.nombre} className="border-t border-surface-border">
-                <td className="py-2.5">{r.nombre}</td>
-                <td className="py-2.5">
-                  <span className="badge bg-primary/10 text-primary">{r.rol}</span>
-                </td>
-                <td className="py-2.5 text-gray-400">{r.ultimoAcceso}</td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
-      </div> */}
-
-{esSuperAdmin && (
-        <div>
-          <p className="mb-3 text-sm font-medium text-gray-500">
-            Gestión de Roles — asigná el rol de Socio o Profesor a cada cuenta
-          </p>
-          <GestorRoles  />
-        </div>
+      {esSuperAdmin && (
+        <GestorCuentasAvanzado usuarios={usuarios} />
       )}
-
-
-
-
 
       <div className="card">
         <p className="mb-4 font-medium text-primary-dark">Alertas y Notificaciones</p>
