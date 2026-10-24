@@ -12,6 +12,8 @@ const actualizarAsociadoSchema = z.object({
   fechaNacimiento: z.string().optional().nullable(),
   email: z.string().email().optional().or(z.literal("")),
   telefono: z.string().optional(),
+  motivoBaja: z.string().optional().nullable(),
+  activo: z.boolean().optional(),
 });
 
 export async function DELETE(
@@ -19,20 +21,40 @@ export async function DELETE(
   { params }: { params: { id: string } }
 ) {
   const session = await getServerSession(authOptions);
-  if (!session?.user.socioId) {
+  if (!session?.user) {
     return NextResponse.json({ error: "No autorizado" }, { status: 403 });
   }
 
+  const esAdmin = session.user.rol !== "SOCIO";
+  const socioId = session.user.socioId;
+
   const asociado = await prisma.grupoFamiliar.findUnique({ where: { id: params.id } });
-  if (!asociado || asociado.socioId !== session.user.socioId) {
+  if (!asociado) {
     return NextResponse.json({ error: "No encontrado" }, { status: 404 });
+  }
+
+  if (!esAdmin && asociado.socioId !== socioId) {
+    return NextResponse.json({ error: "No autorizado" }, { status: 403 });
   }
 
   if (asociado.parentesco.startsWith("Titular Anterior")) {
     return NextResponse.json({ error: "No se puede eliminar el registro del titular anterior." }, { status: 400 });
   }
 
-  await prisma.grupoFamiliar.delete({ where: { id: params.id } });
+  // Conservación de datos históricos: en lugar de un borrado físico destructivo,
+  // se registra la baja conservando los datos para futuras consultas.
+  // Si viene un motivo en query o body, lo toma; de lo contrario usa "Baja voluntaria".
+  const motivo = request.nextUrl.searchParams.get("motivo") || "Baja voluntaria";
+
+  await prisma.grupoFamiliar.update({
+    where: { id: params.id },
+    data: {
+      activo: false,
+      motivoBaja: motivo,
+      fechaBaja: new Date(),
+    },
+  });
+
   return NextResponse.json({ ok: true });
 }
 
@@ -41,13 +63,20 @@ export async function PUT(
   { params }: { params: { id: string } }
 ) {
   const session = await getServerSession(authOptions);
-  if (!session?.user.socioId) {
+  if (!session?.user) {
     return NextResponse.json({ error: "No autorizado" }, { status: 403 });
   }
 
+  const esAdmin = session.user.rol !== "SOCIO";
+  const socioId = session.user.socioId;
+
   const asociado = await prisma.grupoFamiliar.findUnique({ where: { id: params.id } });
-  if (!asociado || asociado.socioId !== session.user.socioId) {
+  if (!asociado) {
     return NextResponse.json({ error: "No encontrado" }, { status: 404 });
+  }
+
+  if (!esAdmin && asociado.socioId !== socioId) {
+    return NextResponse.json({ error: "No autorizado" }, { status: 403 });
   }
 
   if (asociado.parentesco.startsWith("Titular Anterior")) {
@@ -61,7 +90,7 @@ export async function PUT(
   }
 
   const { fechaNacimiento, ...rest } = parsed.data;
-  const dataToSave = {
+  const dataToSave: any = {
     ...rest,
     fechaNacimiento: fechaNacimiento ? new Date(fechaNacimiento) : null
   };

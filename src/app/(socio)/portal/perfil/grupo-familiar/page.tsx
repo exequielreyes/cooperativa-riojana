@@ -27,6 +27,9 @@ export default async function GrupoFamiliarPage() {
           email: a.email,
           telefono: a.telefono,
           fechaNacimiento: a.fechaNacimiento ? a.fechaNacimiento.toISOString().split("T")[0] : null,
+          activo: a.activo,
+          motivoBaja: a.motivoBaja,
+          fechaBaja: a.fechaBaja ? a.fechaBaja.toISOString() : null,
         }))}
       />
     </div>

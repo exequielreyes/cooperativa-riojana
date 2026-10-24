@@ -52,7 +52,7 @@ export function AccionesSocio({
   estado: string;
   email: string;
   nombre: string;
-  grupoFamiliar?: { id: string; nombre: string; apellido: string; parentesco?: string }[];
+  grupoFamiliar?: { id: string; nombre: string; apellido: string; parentesco?: string; activo?: boolean }[];
 }) {
   const router = useRouter();
   const [abierto, setAbierto] = useState(false);
@@ -211,7 +211,7 @@ export function AccionesSocio({
                     className="mt-3 w-full rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm text-gray-800 shadow-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
                   >
                     <option value="">No transferir (Baja definitiva)</option>
-                    {grupoFamiliar.map((fam) => (
+                    {grupoFamiliar.filter((fam) => fam.activo !== false).map((fam) => (
                       <option key={fam.id} value={fam.id}>
                         Transferir a: {fam.nombre} {fam.apellido}
                       </option>

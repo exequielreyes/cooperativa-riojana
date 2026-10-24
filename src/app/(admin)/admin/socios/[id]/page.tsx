@@ -5,6 +5,7 @@ import { prisma } from "@/lib/db";
 import { StatusBadge } from "@/components/ui/StatusBadge";
 import { MarcarPagadoEfectivo } from "@/components/admin/MarcarPagadoEfectivo";
 import { formatCurrency, formatDate } from "@/lib/utils";
+import { BotonBajaFamiliar } from "@/components/admin/BotonBajaFamiliar";
 import { User, Phone, Mail, MapPin, Briefcase, Calendar, CreditCard, Users, Edit, AlertCircle } from "lucide-react";
 
 const estadoLabel: Record<string, string> = { ACTIVO: "Activo", PENDIENTE: "Pendiente", INACTIVO: "Inactivo" };
@@ -30,7 +31,6 @@ export default async function PerfilSocioAdminPage({ params }: { params: { id: s
   const cuotasPendientes = socio.cuotas.filter((c) => c.estado !== "PAGADO");
   const deudaTotal = cuotasPendientes.reduce((acc, c) => acc + Number(c.monto), 0);
 
-  let grupoFamiliarMostrar = socio.grupoFamiliar;
   let nuevoTitular: {
     id: string;
     nombre: string;
@@ -41,7 +41,11 @@ export default async function PerfilSocioAdminPage({ params }: { params: { id: s
     telefono: string | null;
   } | null = null;
 
+  let exTitularId: string | null = null;
+  let grupoFamiliarMostrar: any[] = [];
+
   if (socio.idCooperativa.includes("-BAJA")) {
+    // Perfil del titular anterior (inactivo tras traspaso)
     const cuentaId = socio.idCooperativa.split("-BAJA")[0];
     const cuentaActiva = await prisma.socio.findFirst({
       where: { idCooperativa: cuentaId },
@@ -59,13 +63,43 @@ export default async function PerfilSocioAdminPage({ params }: { params: { id: s
         telefono: cuentaActiva.telefono,
       };
 
-      // Si el socio inactivo no tiene adherentes cargados directamente,
-      // mostramos los adherentes que pertenecían a la cuenta, excluyendo al titular saliente
-      if (grupoFamiliarMostrar.length === 0) {
+      // Fecha límite del traspaso: solo familiares que ya estaban con el titular anterior antes de la baja,
+      // no los nuevos integrantes que agregó el nuevo titular con posterioridad.
+      const fechaCorteTimestamp = new Date(socio.fechaBaja || socio.createdAt).getTime() + 60 * 60 * 1000;
+
+      const familiaresDirectos = socio.grupoFamiliar.filter(
+        (f) => f.activo !== false && !f.parentesco.startsWith("Titular Anterior")
+      );
+
+      if (familiaresDirectos.length > 0) {
+        grupoFamiliarMostrar = familiaresDirectos;
+      } else {
         grupoFamiliarMostrar = cuentaActiva.grupoFamiliar.filter(
-          (f) => f.dni !== socio.dni && !f.parentesco.startsWith("Titular Anterior")
+          (f) =>
+            f.activo !== false &&
+            f.dni !== socio.dni &&
+            !f.parentesco.startsWith("Titular Anterior") &&
+            new Date(f.createdAt).getTime() <= fechaCorteTimestamp
         );
       }
+    } else {
+      grupoFamiliarMostrar = socio.grupoFamiliar.filter(
+        (f) => f.activo !== false && !f.parentesco.startsWith("Titular Anterior")
+      );
+    }
+  } else {
+    // Perfil del titular activo (nuevo titular o titular regular)
+    // Mostramos a sus adherentes activos y además a la persona que fue Titular Anterior
+    grupoFamiliarMostrar = socio.grupoFamiliar.filter(
+      (f) => f.activo !== false || f.parentesco.startsWith("Titular Anterior")
+    );
+
+    const exTitular = await prisma.socio.findFirst({
+      where: { idCooperativa: { startsWith: `${socio.idCooperativa}-BAJA` } },
+      select: { id: true },
+    });
+    if (exTitular) {
+      exTitularId = exTitular.id;
     }
   }
 
@@ -307,7 +341,13 @@ export default async function PerfilSocioAdminPage({ params }: { params: { id: s
                         {asociado.nombre ? asociado.nombre[0].toLowerCase() : "f"}
                       </div>
                       <div>
-                        <p className="font-bold text-gray-900">{asociado.nombre} {asociado.apellido}</p>
+                        {asociado.parentesco.startsWith("Titular Anterior") && exTitularId ? (
+                          <Link href={`/admin/socios/${exTitularId}`} className="font-bold text-gray-900 hover:underline hover:text-primary">
+                            {asociado.nombre} {asociado.apellido}
+                          </Link>
+                        ) : (
+                          <p className="font-bold text-gray-900">{asociado.nombre} {asociado.apellido}</p>
+                        )}
                         <p className={`mt-0.5 text-xs ${asociado.parentesco.startsWith("Titular Anterior") ? "font-medium text-gray-600" : "font-medium text-primary"}`}>
                           {asociado.parentesco}
                         </p>

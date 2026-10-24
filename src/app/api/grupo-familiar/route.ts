@@ -14,14 +14,34 @@ const crearAsociadoSchema = z.object({
   telefono: z.string().optional(),
 });
 
-export async function GET() {
+export async function GET(request: NextRequest) {
   const session = await getServerSession(authOptions);
-  if (!session?.user.socioId) {
+  if (!session?.user) {
+    return NextResponse.json({ error: "No autorizado" }, { status: 403 });
+  }
+
+  const searchParams = request.nextUrl.searchParams;
+  const socioIdParam = searchParams.get("socioId");
+  const incluirBajas = searchParams.get("incluirBajas") === "true";
+
+  // Si se especifica socioId diferente, debe ser admin
+  let socioId = session.user.socioId;
+  if (socioIdParam) {
+    if (session.user.rol === "SOCIO" && socioIdParam !== session.user.socioId) {
+      return NextResponse.json({ error: "No autorizado" }, { status: 403 });
+    }
+    socioId = socioIdParam;
+  }
+
+  if (!socioId) {
     return NextResponse.json({ error: "No autorizado" }, { status: 403 });
   }
 
   const asociados = await prisma.grupoFamiliar.findMany({
-    where: { socioId: session.user.socioId },
+    where: {
+      socioId,
+      ...(incluirBajas ? {} : { activo: true }),
+    },
     orderBy: { createdAt: "asc" },
   });
   return NextResponse.json(asociados);
@@ -29,7 +49,7 @@ export async function GET() {
 
 export async function POST(request: NextRequest) {
   const session = await getServerSession(authOptions);
-  if (!session?.user.socioId) {
+  if (!session?.user) {
     return NextResponse.json({ error: "No autorizado" }, { status: 403 });
   }
 
@@ -39,11 +59,21 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: parsed.error.flatten() }, { status: 400 });
   }
 
+  let socioId = session.user.socioId;
+  if (body.socioId && session.user.rol !== "SOCIO") {
+    socioId = body.socioId;
+  }
+
+  if (!socioId) {
+    return NextResponse.json({ error: "No autorizado" }, { status: 403 });
+  }
+
   const { fechaNacimiento, ...rest } = parsed.data;
   const dataToSave = {
     ...rest,
-    socioId: session.user.socioId,
-    fechaNacimiento: fechaNacimiento ? new Date(fechaNacimiento) : null
+    socioId,
+    fechaNacimiento: fechaNacimiento ? new Date(fechaNacimiento) : null,
+    activo: true,
   };
 
   const asociado = await prisma.grupoFamiliar.create({

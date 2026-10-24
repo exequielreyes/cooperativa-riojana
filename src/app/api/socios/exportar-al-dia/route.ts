@@ -236,7 +236,7 @@ export async function GET(request: NextRequest) {
 
     // Sub-filas de Grupo Familiar (excluyendo a Titular Anterior según regla de negocio)
     const familiares = socio.grupoFamiliar?.filter(
-      (fam) => !fam.parentesco.includes("Titular Anterior")
+      (fam) => fam.activo !== false && !fam.parentesco.includes("Titular Anterior")
     );
 
     if (familiares && familiares.length > 0) {
