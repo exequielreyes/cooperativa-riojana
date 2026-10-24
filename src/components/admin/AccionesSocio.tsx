@@ -81,7 +81,7 @@ export function AccionesSocio({
     const body: any = { estado: nuevoEstado };
     if (nuevoEstado === "INACTIVO" && confirmando === "BAJA") {
       body.motivoBaja = motivoBaja || null;
-      if (transferirAId) {
+      if (motivoBaja === "FALLECIMIENTO" && transferirAId) {
         body.transferirAId = transferirAId;
       }
     }
@@ -190,7 +190,13 @@ export function AccionesSocio({
               <select
                 id="motivoBaja"
                 value={motivoBaja}
-                onChange={(e) => setMotivoBaja(e.target.value)}
+                onChange={(e) => {
+                  const val = e.target.value;
+                  setMotivoBaja(val);
+                  if (val !== "FALLECIMIENTO") {
+                    setTransferirAId("");
+                  }
+                }}
                 className="w-full rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm text-gray-700 shadow-sm focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary"
               >
                 <option value="">Seleccione un motivo (opcional)</option>
@@ -199,7 +205,7 @@ export function AccionesSocio({
                 <option value="FALTA_PAGO">Falta de pagos</option>
               </select>
 
-              {grupoFamiliar && grupoFamiliar.length > 0 && (
+              {motivoBaja === "FALLECIMIENTO" && grupoFamiliar && grupoFamiliar.length > 0 && (
                 <div className="rounded-xl border border-blue-100 bg-[#f0f6ff] p-3.5 text-left">
                   <p className="text-sm font-semibold text-[#1e40af]">Traspaso de titularidad</p>
                   <p className="mt-1 text-xs text-[#2563eb] leading-relaxed">
