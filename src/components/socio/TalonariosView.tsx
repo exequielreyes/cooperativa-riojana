@@ -11,6 +11,7 @@ interface TalonariosViewProps {
     nombre: string;
     apellido: string;
     idCooperativa: string;
+    area?: string;
   };
   talonarios: TalonarioData[];
 }
@@ -50,7 +51,7 @@ export function TalonariosView({ socio, talonarios }: TalonariosViewProps) {
         <div>
           <h1 className="text-2xl font-semibold text-primary-dark">Talonarios Oficiales</h1>
           <p className="text-sm text-gray-500">
-            Cupones correspondientes a tus períodos abonados del Servicio de Sepelio.
+            Cupones correspondientes a tus períodos abonados del {socio.area === "CONSUMO" ? "Servicio de Consumo" : "Servicio de Sepelio"}.
           </p>
         </div>
 
@@ -172,7 +173,7 @@ export function TalonariosView({ socio, talonarios }: TalonariosViewProps) {
                     {/* Título Principal */}
                     <div className="text-center sm:text-right flex-1 sm:pl-6">
                       <h2 className="text-2xl sm:text-3xl font-black uppercase tracking-widest text-black">
-                        SERVICIO DE SEPELIO
+                        {talonariosFiltrados[0]?.concepto || (socio.area === "CONSUMO" ? "SERVICIO DE CONSUMO" : "SERVICIO DE SEPELIO")}
                       </h2>
                     </div>
                   </div>

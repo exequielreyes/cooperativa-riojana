@@ -184,7 +184,7 @@ export default async function AdminSociosPage({
           <div className="flex items-center gap-2">
             <span className="flex h-2.5 w-2.5 rounded-full bg-emerald-500"></span>
             <p className="text-sm font-semibold text-emerald-900">
-              Padrón de Socios al Día
+              Padrón de Socios al Día {currentArea === "CONSUMO" ? "(Área Consumo - Cobertura Titular)" : "(Área Sepelio - Cobertura Titular y Familiar)"}
             </p>
             <span className="text-xs text-emerald-700 font-medium">
               ({total} {total === 1 ? "socio" : "socios"} con cuotas al día)
@@ -281,7 +281,8 @@ export default async function AdminSociosPage({
                         estado={socio.estado} 
                         email={socio.email} 
                         nombre={`${socio.nombre} ${socio.apellido}`} 
-                        grupoFamiliar={socio.grupoFamiliar} 
+                        grupoFamiliar={socio.grupoFamiliar}
+                        area={socio.area} 
                       />
                     </td>
                   </>
@@ -308,13 +309,14 @@ export default async function AdminSociosPage({
                         estado={socio.estado} 
                         email={socio.email} 
                         nombre={`${socio.nombre} ${socio.apellido}`} 
-                        grupoFamiliar={socio.grupoFamiliar} 
+                        grupoFamiliar={socio.grupoFamiliar}
+                        area={socio.area} 
                       />
                     </td>
                   </>
                 )}
               </tr>
-              {filtroExtra === "al_dia" && socio.grupoFamiliar
+              {filtroExtra === "al_dia" && currentArea !== "CONSUMO" && socio.grupoFamiliar
                 ?.filter((fam) => fam.activo !== false && !fam.parentesco.includes("Titular Anterior"))
                 .map((fam) => (
                 <tr key={fam.id} className="border-b border-gray-50 bg-gray-50/20 last:border-0">

@@ -94,7 +94,7 @@ export async function generarTalonariosParaCuotas(cuotaIds: string[], pagoId?: s
         mes,
         anio,
         periodo: cuota.periodo,
-        concepto: "SERVICIO DE SEPELIO",
+        concepto: cuota.socio.area === "CONSUMO" ? "SERVICIO DE CONSUMO" : "SERVICIO DE SEPELIO",
         monto: cuota.monto,
       },
     });
@@ -107,7 +107,7 @@ export async function generarTalonariosParaCuotas(cuotaIds: string[], pagoId?: s
         data: {
           socioId: cuota.socioId,
           titulo: `Nuevo talonario disponible - ${cuota.periodo}`,
-          mensaje: `Se ha emitido tu talonario oficial del Servicio de Sepelio para el período ${cuota.periodo}. Ya podés verlo y descargarlo en la sección de Talonarios.`,
+          mensaje: `Se ha emitido tu talonario oficial del ${cuota.socio.area === "CONSUMO" ? "Servicio de Consumo" : "Servicio de Sepelio"} para el período ${cuota.periodo}. Ya podés verlo y descargarlo en la sección de Talonarios.`,
           link: "/portal/talonarios",
         },
       });

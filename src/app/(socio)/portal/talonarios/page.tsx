@@ -18,6 +18,7 @@ export default async function TalonariosPage() {
       nombre: true,
       apellido: true,
       idCooperativa: true,
+      area: true,
     },
   });
 
@@ -41,6 +42,7 @@ export default async function TalonariosPage() {
       nombre: t.socio.nombre,
       apellido: t.socio.apellido,
       idCooperativa: t.socio.idCooperativa,
+      area: t.socio.area,
     },
   }));
 

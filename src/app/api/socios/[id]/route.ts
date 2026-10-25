@@ -127,7 +127,7 @@ export async function PATCH(request: NextRequest, { params }: { params: { id: st
   }
 
   // Traspaso de titularidad si se dio de baja y se seleccionó un familiar
-  if (parsed.data.estado === "INACTIVO" && parsed.data.transferirAId) {
+  if (parsed.data.estado === "INACTIVO" && parsed.data.transferirAId && socioActual.area !== "CONSUMO") {
     const familiar = await prisma.grupoFamiliar.findFirst({
       where: { id: parsed.data.transferirAId, socioId: socioActual.id },
     });

@@ -17,6 +17,7 @@ export interface TalonarioData {
     nombre: string;
     apellido: string;
     idCooperativa: string;
+    area?: string;
   };
 }
 
@@ -76,7 +77,7 @@ export function TalonarioItem({
         {/* Servicio y Teléfonos */}
         <div className="flex flex-1 flex-col justify-center text-center px-1">
           <p className="text-[12px] font-black uppercase tracking-wider text-slate-950 leading-tight">
-            SERVICIO DE SEPELIO
+            {talonario.concepto || (talonario.socio?.area === "CONSUMO" ? "SERVICIO DE CONSUMO" : "SERVICIO DE SEPELIO")}
           </p>
           <p className="mt-0.5 text-[8.5px] font-semibold text-slate-800 leading-tight">
             Tel: (0380) 4422089
