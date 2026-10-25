@@ -22,11 +22,14 @@ export function GrupoFamiliarManager({
   asociadosIniciales,
   isAdmin = false,
   socioId,
+  area,
 }: {
   asociadosIniciales: Asociado[];
   isAdmin?: boolean;
   socioId?: string;
+  area?: string;
 }) {
+  const esConsumo = area === "CONSUMO";
   const [asociados, setAsociados] = useState<Asociado[]>(asociadosIniciales);
   const [mostrarForm, setMostrarForm] = useState(false);
   const [enviando, setEnviando] = useState(false);
@@ -238,7 +241,7 @@ export function GrupoFamiliarManager({
           </button>
         </div>
 
-        {tab === "activos" && (
+        {tab === "activos" && !esConsumo && (
           <button
             className="btn-primary"
             onClick={() => (mostrarForm ? cancelarFormulario() : setMostrarForm(true))}
@@ -249,7 +252,7 @@ export function GrupoFamiliarManager({
       </div>
 
       {/* Formulario de Alta / Edición */}
-      {mostrarForm && (
+      {mostrarForm && (!esConsumo || asociadoEnEdicion) && (
         <form
           key={asociadoEnEdicion?.id || "nuevo"}
           className="card mb-4 grid gap-3 sm:grid-cols-2"

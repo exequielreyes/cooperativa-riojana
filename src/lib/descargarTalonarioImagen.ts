@@ -52,7 +52,8 @@ export async function descargarTalonarioComoImagen(talonario: TalonarioData) {
   ctx.textAlign = "center";
   ctx.fillStyle = "#020617";
   ctx.font = "900 24px 'Segoe UI', Arial, sans-serif";
-  ctx.fillText("SERVICIO DE SEPELIO", 450, 60);
+  const concepto = talonario.concepto || ((talonario.socio as any)?.area === "CONSUMO" ? "SERVICIO DE CONSUMO" : "SERVICIO DE SEPELIO");
+  ctx.fillText(concepto, 450, 60);
 
   ctx.fillStyle = "#1e293b";
   ctx.font = "bold 15px 'Segoe UI', Arial, sans-serif";

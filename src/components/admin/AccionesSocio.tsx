@@ -47,12 +47,14 @@ export function AccionesSocio({
   email,
   nombre,
   grupoFamiliar = [],
+  area,
 }: {
   socioId: string;
   estado: string;
   email: string;
   nombre: string;
   grupoFamiliar?: { id: string; nombre: string; apellido: string; parentesco?: string; activo?: boolean }[];
+  area?: string;
 }) {
   const router = useRouter();
   const [abierto, setAbierto] = useState(false);
@@ -205,7 +207,7 @@ export function AccionesSocio({
                 <option value="FALTA_PAGO">Falta de pagos</option>
               </select>
 
-              {motivoBaja === "FALLECIMIENTO" && grupoFamiliar && grupoFamiliar.length > 0 && (
+              {motivoBaja === "FALLECIMIENTO" && area !== "CONSUMO" && grupoFamiliar && grupoFamiliar.length > 0 && (
                 <div className="rounded-xl border border-blue-100 bg-[#f0f6ff] p-3.5 text-left">
                   <p className="text-sm font-semibold text-[#1e40af]">Traspaso de titularidad</p>
                   <p className="mt-1 text-xs text-[#2563eb] leading-relaxed">

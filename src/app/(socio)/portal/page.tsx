@@ -90,7 +90,7 @@ export default async function PortalDashboardPage() {
               </Link>
               <Link href="/portal/talonarios" className="card block border-l-4 border-l-primary">
                 <p className="font-medium text-primary-dark">Talonarios Digitales →</p>
-                <p className="text-xs text-gray-500">Accedé y descargá tus talonarios oficiales de sepelio</p>
+                <p className="text-xs text-gray-500">Accedé y descargá tus talonarios oficiales de {socio?.area === "CONSUMO" ? "consumo" : "sepelio"}</p>
               </Link>
             </div>
           </div>

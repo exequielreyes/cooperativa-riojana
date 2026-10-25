@@ -158,6 +158,11 @@ export default async function PerfilPage() {
                     <h3 className="font-semibold text-primary-dark group-hover:text-primary">Mi Grupo Familiar</h3>
                     <p className="text-sm text-gray-600">
                       {socio.grupoFamiliar.filter((f) => f.activo !== false && !f.parentesco.startsWith("Titular Anterior")).length} adherente(s) activo(s){socio.grupoFamiliar.some((f) => f.activo === false || f.parentesco.startsWith("Titular Anterior")) ? ' (' + socio.grupoFamiliar.filter((f) => f.activo === false || f.parentesco.startsWith("Titular Anterior")).length + ' baja/egreso)' : ''}
+                      {socio.area === "CONSUMO" && (
+                        <span className="block text-xs text-amber-700 font-medium mt-0.5">
+                          (Área Consumo: Beneficios y operaciones exclusivos del titular)
+                        </span>
+                      )}
                     </p>
                   </div>
                 </div>

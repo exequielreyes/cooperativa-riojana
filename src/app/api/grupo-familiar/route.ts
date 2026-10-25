@@ -68,6 +68,19 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: "No autorizado" }, { status: 403 });
   }
 
+  // Socios de CONSUMO no pueden añadir integrantes al grupo familiar
+  const socio = await prisma.socio.findUnique({
+    where: { id: socioId },
+    select: { area: true },
+  });
+
+  if (socio?.area === "CONSUMO" && session.user.rol === "SOCIO") {
+    return NextResponse.json(
+      { error: "Los socios del área de Consumo no pueden añadir integrantes al grupo familiar." },
+      { status: 400 }
+    );
+  }
+
   const { fechaNacimiento, ...rest } = parsed.data;
   const dataToSave = {
     ...rest,

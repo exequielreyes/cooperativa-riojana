@@ -140,7 +140,7 @@ export default async function PerfilSocioAdminPage({ params }: { params: { id: s
                   />
                 </div>
                 <p className="mt-1 text-sm font-medium text-gray-500">
-                  N° Socio: <span className="text-primary">{socio.idCooperativa}</span> • Ingresó el {socio.fechaing ? new Date(socio.fechaing).toLocaleDateString("es-AR", { timeZone: "UTC" }) : "-"}
+                  N° Socio: <span className="text-primary">{socio.idCooperativa}</span> • Área: <span className="font-semibold text-gray-700">{socio.area}</span> • Ingresó el {socio.fechaing ? new Date(socio.fechaing).toLocaleDateString("es-AR", { timeZone: "UTC" }) : "-"}
                 </p>
               </div>
             </div>
@@ -291,12 +291,30 @@ export default async function PerfilSocioAdminPage({ params }: { params: { id: s
               <div className="flex items-center gap-2">
                 <Users size={18} className="text-gray-500" />
                 <h3 className="font-semibold text-gray-900">Grupo Familiar</h3>
+                {socio.area === "CONSUMO" ? (
+                  <span className="rounded-full bg-amber-100 px-2 py-0.5 text-[11px] font-semibold text-amber-800">
+                    Sin cobertura de consumo (exclusivo titular)
+                  </span>
+                ) : (
+                  <span className="rounded-full bg-emerald-100 px-2 py-0.5 text-[11px] font-semibold text-emerald-800">
+                    Cobertura de Sepelio extendida
+                  </span>
+                )}
               </div>
               <span className="flex h-6 min-w-[24px] items-center justify-center rounded-full bg-gray-200 px-1.5 text-xs font-semibold text-gray-600">
                 {totalFamiliares}
               </span>
             </div>
             
+            {socio.area === "CONSUMO" && (
+              <div className="border-b border-amber-100 bg-amber-50/60 p-4 text-xs text-amber-900 flex items-start gap-2.5">
+                <AlertCircle size={16} className="text-amber-600 shrink-0 mt-0.5" />
+                <p>
+                  <strong>Área Consumo (Cobertura Directa al Titular):</strong> A diferencia del área de Sepelio, los beneficios, servicios, obligaciones y registros de Consumo no se extienden al grupo familiar. Las operaciones se asocian directamente al socio titular y se mantienen separadas de las reglas de cobertura familiar.
+                </p>
+              </div>
+            )}
+
             {totalFamiliares === 0 ? (
               <div className="p-8 text-center">
                 <p className="text-sm text-gray-500">No hay adherentes cargados en este grupo familiar.</p>

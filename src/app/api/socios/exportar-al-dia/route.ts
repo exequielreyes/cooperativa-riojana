@@ -112,7 +112,10 @@ export async function GET(request: NextRequest) {
   // FILA 2: Subtítulo
   sheet.mergeCells("A2:G2");
   const cellA2 = sheet.getCell("A2");
-  cellA2.value = "PADRÓN OFICIAL - SOCIOS Y FAMILIARES CON CUOTAS AL DÍA";
+  cellA2.value =
+    currentArea === "CONSUMO"
+      ? "PADRÓN OFICIAL - SOCIOS CON CUOTAS AL DÍA (ÁREA CONSUMO - COBERTURA TITULAR)"
+      : "PADRÓN OFICIAL - SOCIOS Y FAMILIARES CON CUOTAS AL DÍA";
   cellA2.font = { name: "Calibri", size: 11, bold: true, color: { argb: "FFE2E8F0" } };
   cellA2.fill = { type: "pattern", pattern: "solid", fgColor: { argb: "FF115E59" } };
   cellA2.alignment = { vertical: "middle", horizontal: "center" };
@@ -235,7 +238,7 @@ export async function GET(request: NextRequest) {
     rowIndex++;
 
     // Sub-filas de Grupo Familiar (excluyendo a Titular Anterior según regla de negocio)
-    const familiares = socio.grupoFamiliar?.filter(
+    const familiares = currentArea === "CONSUMO" ? [] : socio.grupoFamiliar?.filter(
       (fam) => fam.activo !== false && !fam.parentesco.includes("Titular Anterior")
     );
 
@@ -296,7 +299,7 @@ export async function GET(request: NextRequest) {
   totalLabelCell.alignment = { vertical: "middle", horizontal: "right" };
 
   const totalTitularesCell = sheet.getCell(`E${rowIndex}`);
-  totalTitularesCell.value = `${contadorTitulares} socios titulares · ${contadorFamiliares} adherentes`;
+  totalTitularesCell.value = currentArea === "CONSUMO" ? `${contadorTitulares} socios titulares (cobertura exclusiva titular)` : `${contadorTitulares} socios titulares · ${contadorFamiliares} adherentes`;
   totalTitularesCell.font = { name: "Calibri", size: 10, bold: true, color: { argb: "FF0F4C4C" } };
   totalTitularesCell.alignment = { vertical: "middle", horizontal: "left" };
 
