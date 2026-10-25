@@ -55,7 +55,7 @@ export default async function AdminPagosPage({
   const [pagos, recaudadoAgg, deudaAgg, pagosPendientesRaw, configuracion] = await Promise.all([
     prisma.pago.findMany({
       where,
-      include: { socio: true, cuota: true },
+      include: { socio: true, cuota: true, validadoPor: true },
       orderBy: { fechaPago: "desc" },
     }),
     prisma.pago.aggregate({
@@ -107,6 +107,7 @@ export default async function AdminPagosPage({
     estadoValidacion: PagoConRelaciones["estadoValidacion"];
     montoTotal: number;
     comprobanteUrl: string | null;
+    validadoPor?: PagoConRelaciones["validadoPor"];
     cuotas: CuotaResumen[];
   }
 
@@ -142,6 +143,7 @@ export default async function AdminPagosPage({
         estadoValidacion: pago.estadoValidacion,
         montoTotal: Number(pago.monto),
         comprobanteUrl: pago.comprobanteUrl,
+        validadoPor: pago.validadoPor,
         cuotas: pago.cuota
           ? [
               {
@@ -277,7 +279,14 @@ export default async function AdminPagosPage({
                   )}
                 </td>
                 <td className="px-6 py-3">{formatDate(grupo.fechaPago)}</td>
-                <td className="px-6 py-3">{grupo.metodo}</td>
+                <td className="px-6 py-3">
+                  <p className="font-medium text-gray-900">{grupo.metodo}</p>
+                  {grupo.validadoPor && (
+                    <p className="text-[10px] text-gray-400">
+                      Por: {grupo.validadoPor.nombre || grupo.validadoPor.email}
+                    </p>
+                  )}
+                </td>
                 <td className="px-6 py-3">
                   <StatusBadge label={estadoLabel[grupo.estadoValidacion]} tone={estadoTone[grupo.estadoValidacion]} />
                 </td>

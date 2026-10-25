@@ -33,7 +33,13 @@ export default function LoginPage() {
     // Redirigimos según el rol de la sesión recién creada
     const session = await getSession();
     if (session?.user?.rol === "SOCIO") {
-      router.push("/portal");
+
+    } else if (session?.user?.rol === "PROFESOR") {
+      router.push("/profesor");
+    } else if (session?.user?.rol === "COBRADOR") {
+      router.push("/cobrador");
+
+
     } else {
       router.push("/admin");
     }
