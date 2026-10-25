@@ -4,7 +4,7 @@ import { notFound } from "next/navigation";
 import { prisma } from "@/lib/db";
 import { StatusBadge } from "@/components/ui/StatusBadge";
 import { MarcarPagadoEfectivo } from "@/components/admin/MarcarPagadoEfectivo";
-import { formatCurrency, formatDate } from "@/lib/utils";
+import { formatCurrency, formatDate, cn } from "@/lib/utils";
 import { BotonBajaFamiliar } from "@/components/admin/BotonBajaFamiliar";
 import { User, Phone, Mail, MapPin, Briefcase, Calendar, CreditCard, Users, Edit, AlertCircle } from "lucide-react";
 
@@ -20,6 +20,11 @@ export default async function PerfilSocioAdminPage({ params }: { params: { id: s
     where: { id: params.id },
     include: {
       grupoFamiliar: true,
+      pagos: {
+        orderBy: { fechaPago: "desc" },
+        take: 5,
+        include: { cuota: true, validadoPor: true },
+      },
       cuotas: {
         orderBy: { fechaVencimiento: "desc" },
         include: { pagos: { orderBy: { fechaPago: "desc" }, take: 1 } },
@@ -265,11 +270,63 @@ export default async function PerfilSocioAdminPage({ params }: { params: { id: s
                   <tbody className="divide-y divide-gray-100">
                     {cuotasPendientes.map((cuota) => {
                       const enRevision = cuota.pagos[0]?.estadoValidacion === "PENDIENTE_REVISION";
+
+                      const fv = new Date(cuota.fechaVencimiento);
+                      const hoy = new Date();
+                      const fvMidnight = new Date(fv.getFullYear(), fv.getMonth(), fv.getDate()).getTime();
+                      const hoyMidnight = new Date(hoy.getFullYear(), hoy.getMonth(), hoy.getDate()).getTime();
+                      const diffDays = Math.round((fvMidnight - hoyMidnight) / (1000 * 60 * 60 * 24));
+
+                      const esVencida = cuota.estado === "VENCIDO" || diffDays < 0;
+                      const esPorVencer = !esVencida && diffDays <= 3;
+
                       return (
-                      <tr key={cuota.id} className="transition-colors hover:bg-gray-50/50">
-                        <td className="px-5 py-4 font-medium text-gray-900">{cuota.periodo}</td>
-                        <td className="px-5 py-4 text-gray-600">{formatDate(cuota.fechaVencimiento)}</td>
-                        <td className="px-5 py-4 font-semibold text-gray-900">{formatCurrency(Number(cuota.monto))}</td>
+                      <tr
+                        key={cuota.id}
+                        className={cn(
+                          "transition-colors",
+                          esVencida
+                            ? "bg-red-50/40 hover:bg-red-50/70"
+                            : esPorVencer
+                            ? "bg-amber-50/40 hover:bg-amber-50/70"
+                            : "hover:bg-gray-50/50"
+                        )}
+                      >
+                        <td className={cn(
+                          "px-5 py-4 font-medium",
+                          esVencida ? "text-status-danger font-bold" : esPorVencer ? "text-amber-800 font-bold" : "text-gray-900"
+                        )}>
+                          {cuota.periodo}
+                        </td>
+                        <td className="px-5 py-4">
+                          <div className="flex flex-wrap items-center gap-2">
+                            <span className={cn(
+                              "font-medium",
+                              esVencida
+                                ? "text-status-danger font-semibold"
+                                : esPorVencer
+                                ? "text-amber-700 font-semibold"
+                                : "text-gray-600"
+                            )}>
+                              {formatDate(cuota.fechaVencimiento)}
+                            </span>
+                            {esVencida && (
+                              <StatusBadge label="Vencida" tone="danger" />
+                            )}
+                            {esPorVencer && (
+                              <StatusBadge
+                                label={diffDays === 0 ? "Vence hoy" : `Por vencer (${diffDays}d)`}
+                                tone="warning"
+                              />
+                            )}
+                          </div>
+                        </td>
+                        <td className={cn(
+                          "px-5 py-4 font-semibold",
+                          esVencida ? "text-status-danger" : esPorVencer ? "text-amber-800" : "text-gray-900"
+                        )}>
+                          {formatCurrency(Number(cuota.monto))}
+                        </td>
                         <td className="px-5 py-4">
                           {enRevision ? (
                               <StatusBadge label="En revisión" tone="warning" />
@@ -280,6 +337,58 @@ export default async function PerfilSocioAdminPage({ params }: { params: { id: s
                       </tr>
                       );
                     })}
+                  </tbody>
+                </table>
+              </div>
+            )}
+          </div>
+
+          <div className="rounded-2xl border border-gray-100 bg-white shadow-sm overflow-hidden">
+            <div className="flex items-center gap-2 border-b border-gray-100 bg-gray-50/50 p-5">
+              <CreditCard size={18} className="text-gray-500" />
+              <h3 className="font-semibold text-gray-900">Historial de Pagos Recientes</h3>
+            </div>
+            
+            {socio.pagos.length === 0 ? (
+              <div className="p-6 text-center text-xs text-gray-400">
+                No hay pagos registrados para este socio.
+              </div>
+            ) : (
+              <div className="overflow-x-auto">
+                <table className="w-full text-sm">
+                  <thead>
+                    <tr className="bg-gray-50/30 text-left text-xs text-gray-500">
+                      <th className="px-5 py-3 font-medium">Período / Cuota</th>
+                      <th className="px-5 py-3 font-medium">Fecha</th>
+                      <th className="px-5 py-3 font-medium">Método</th>
+                      <th className="px-5 py-3 font-medium">Monto</th>
+                      <th className="px-5 py-3 font-medium">Registrado por</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-gray-100">
+                    {socio.pagos.map((pago) => (
+                      <tr key={pago.id} className="transition-colors hover:bg-gray-50/50">
+                        <td className="px-5 py-3 text-xs font-semibold text-gray-900">
+                          {pago.cuota?.periodo || "Cuota Social"}
+                        </td>
+                        <td className="px-5 py-3 text-xs text-gray-600">
+                          {formatDate(pago.fechaPago)}
+                        </td>
+                        <td className="px-5 py-3 text-xs">
+                          <span className={`rounded-full px-2 py-0.5 text-[11px] font-semibold ${
+                            pago.metodo === "EFECTIVO" ? "bg-emerald-50 text-emerald-700" : "bg-blue-50 text-blue-700"
+                          }`}>
+                            {pago.metodo}
+                          </span>
+                        </td>
+                        <td className="px-5 py-3 text-xs font-bold text-gray-900">
+                          {formatCurrency(Number(pago.monto))}
+                        </td>
+                        <td className="px-5 py-3 text-xs text-gray-600">
+                          {pago.validadoPor?.nombre || pago.validadoPor?.email || (pago.metodo === "EFECTIVO" ? "Cobrador" : "Administración")}
+                        </td>
+                      </tr>
+                    ))}
                   </tbody>
                 </table>
               </div>

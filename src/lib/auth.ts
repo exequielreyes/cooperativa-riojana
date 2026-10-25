@@ -44,7 +44,9 @@ export const authOptions: NextAuthOptions = {
           id: usuario.id,
           email: usuario.email,
           rol: usuario.rol,
-          nombre: usuario.socio
+          nombre: usuario.nombre
+            ? usuario.nombre
+            : usuario.socio
             ? `${usuario.socio.nombre} ${usuario.socio.apellido}`
             : usuario.email,
           socioId: usuario.socio?.id ?? null,
