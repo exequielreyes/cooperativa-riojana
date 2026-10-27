@@ -18,6 +18,7 @@ const editarTallerSchema = z.object({
   horaFin: z.string().optional().nullable(),
   cuposTotales: z.coerce.number().min(1),
   requisitos: z.string().optional().nullable(),
+  queAprenderas: z.string().optional().nullable(),
   materialUrl: z.string().optional().nullable(),
   esPago: z.boolean().default(false),
   precio: z.coerce.number().optional().nullable(),
@@ -65,6 +66,7 @@ export async function PATCH(request: NextRequest, { params }: { params: { id: st
       horaFin: formData.get("horaFin") || null,
       cuposTotales: formData.get("cuposTotales"),
       requisitos: formData.get("requisitos") || null,
+      queAprenderas: formData.get("queAprenderas") || null,
       materialUrl: formData.get("materialUrl") || null,
       esPago: formData.get("esPago") === "true",
       precio: formData.get("precio") || null,
@@ -106,6 +108,7 @@ export async function PATCH(request: NextRequest, { params }: { params: { id: st
       horaFin: data.horaFin || null,
       cuposTotales: data.cuposTotales,
       requisitos: data.requisitos || null,
+      queAprenderas: data.queAprenderas || null,
       materialUrl: data.materialUrl || null,
       esPago: data.esPago,
       precio: data.esPago ? data.precio : null,
@@ -125,5 +128,40 @@ export async function PATCH(request: NextRequest, { params }: { params: { id: st
   } catch (error) {
     console.error("Error al actualizar el taller:", error);
     return NextResponse.json({ error: "No se pudo actualizar el taller." }, { status: 500 });
+  }
+}
+
+export async function DELETE(
+  _request: NextRequest,
+  { params }: { params: { id: string } }
+) {
+  const session = await getServerSession(authOptions);
+  if (!session || session.user.rol === "SOCIO") {
+    return NextResponse.json({ error: "No autorizado" }, { status: 403 });
+  }
+
+  try {
+    const taller = await prisma.taller.findUnique({
+      where: { id: params.id },
+    });
+
+    if (!taller) {
+      return NextResponse.json({ error: "Taller no encontrado" }, { status: 404 });
+    }
+
+    // Eliminamos en una transacción los contenidos, las inscripciones asociadas y el taller
+    await prisma.$transaction([
+      prisma.contenidoTaller.deleteMany({ where: { tallerId: params.id } }),
+      prisma.inscripcionTaller.deleteMany({ where: { tallerId: params.id } }),
+      prisma.taller.delete({ where: { id: params.id } }),
+    ]);
+
+    return NextResponse.json({ ok: true });
+  } catch (error) {
+    console.error("Error al eliminar el taller:", error);
+    return NextResponse.json(
+      { error: "No se pudo eliminar el taller." },
+      { status: 500 }
+    );
   }
 }

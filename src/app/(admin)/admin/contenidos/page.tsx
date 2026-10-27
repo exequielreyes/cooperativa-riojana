@@ -2,12 +2,26 @@ import Link from "next/link";
 import { NoticiaForm } from "@/components/admin/NoticiaForm";
 import { ContenidoRecienteItem } from "@/components/admin/ContenidoRecienteItem";
 import { prisma } from "@/lib/db";
-import { Trash2, GraduationCap } from "lucide-react";
+import { Trash2 } from "lucide-react";
+import { AdminPagination } from "@/components/ui/AdminPagination";
 
-export default async function AdminContenidosPage() {
+const PAGE_SIZE = 6;
+
+export default async function AdminContenidosPage({
+  searchParams,
+}: {
+  searchParams?: { page?: string };
+}) {
+  const page = Math.max(1, parseInt(searchParams?.page ?? "1", 10) || 1);
+
+  const totalNoticias = await prisma.noticia.count();
+  const totalPaginas = Math.max(1, Math.ceil(totalNoticias / PAGE_SIZE));
+  const pageSegura = Math.min(page, totalPaginas);
+
   const recientes = await prisma.noticia.findMany({
     orderBy: { createdAt: "desc" },
-    take: 8,
+    skip: (pageSegura - 1) * PAGE_SIZE,
+    take: PAGE_SIZE,
     include: { redesSociales: true },
   });
 
@@ -40,24 +54,22 @@ export default async function AdminContenidosPage() {
                   }}
                 />
               ))}
+
+              <div className="-mx-6 -mb-6 mt-4">
+                <AdminPagination
+                  page={pageSegura}
+                  totalPaginas={totalPaginas}
+                  totalItems={totalNoticias}
+                  pageSize={PAGE_SIZE}
+                  itemLabel="noticias"
+                  basePath="/admin/contenidos"
+                />
+              </div>
             </div>
           )}
         </div>
 
         <div className="space-y-6">
-          {/* <div className="card">
-            <div className="mb-2 flex items-center gap-2 text-primary-dark">
-              <GraduationCap size={18} />
-              <p className="font-medium">Talleres</p>
-            </div>
-            <p className="mb-3 text-sm text-gray-500">
-              Publicá un nuevo taller para que los socios puedan inscribirse.
-            </p>
-            <Link href="/admin/contenidos/talleres/nuevo" className="btn-primary block text-center">
-              + Subir Nuevo Taller
-            </Link>
-          </div> */}
-
           <div className="card border-status-danger/30">
             <div className="mb-2 flex items-center gap-2 text-status-danger">
               <Trash2 size={18} />

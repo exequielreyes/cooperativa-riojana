@@ -46,14 +46,19 @@ export default async function AdminConfiguracionPage() {
       {esSuperAdmin && <GestorCuentasAvanzado usuarios={usuarios} />}
 
       <div className="card">
-        <p className="mb-4 font-medium text-primary-dark">Alertas y Notificaciones</p>
-        <label className="flex items-center justify-between border-b border-surface-border py-3 text-sm text-gray-600">
+        <div className="mb-4 flex items-center justify-between">
+          <p className="font-medium text-primary-dark">Alertas y Notificaciones</p>
+          <span className="rounded-full bg-amber-50 border border-amber-200 px-3 py-1 text-xs font-semibold text-amber-800 shadow-2xs">
+            Próximamente
+          </span>
+        </div>
+        <label className="flex items-center justify-between border-b border-surface-border py-3 text-sm text-gray-400 cursor-not-allowed">
           Notificar inmediatamente cuando una transacción de socio sea rechazada
-          <input type="checkbox" defaultChecked />
+          <input type="checkbox" defaultChecked disabled className="cursor-not-allowed opacity-60" />
         </label>
-        <label className="flex items-center justify-between py-3 text-sm text-gray-600">
+        <label className="flex items-center justify-between py-3 text-sm text-gray-400 cursor-not-allowed">
           Recibir resumen diario de nuevos socios adheridos
-          <input type="checkbox" />
+          <input type="checkbox" disabled className="cursor-not-allowed opacity-60" />
         </label>
       </div>
     </div>
