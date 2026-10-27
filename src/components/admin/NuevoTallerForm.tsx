@@ -85,6 +85,9 @@ export function NuevoTallerForm() {
     if (formData.get("requisitos")) {
       data.append("requisitos", formData.get("requisitos") as string);
     }
+    if (formData.get("queAprenderas")) {
+      data.append("queAprenderas", formData.get("queAprenderas") as string);
+    }
     if (formData.get("materialUrl")) {
       data.append("materialUrl", formData.get("materialUrl") as string);
     }
@@ -249,9 +252,27 @@ export function NuevoTallerForm() {
       </div>
 
       <div className="card">
-        <p className="mb-4 font-medium text-primary-dark">Cupos y Requisitos</p>
+        <p className="mb-4 font-medium text-primary-dark">Cupos, Aprendizaje y Requisitos</p>
         <input className="input mb-4" type="number" min={1} name="cuposTotales" placeholder="Cupos totales" required />
-        <textarea className="input h-20 resize-none" name="requisitos" placeholder="Requisitos (opcional)" />
+        <div className="mb-4">
+          <label className="mb-1 block text-xs font-semibold uppercase tracking-wide text-primary-dark">
+            Qué aprenderás (opcional)
+          </label>
+          <textarea
+            className="input h-24 resize-none"
+            name="queAprenderas"
+            placeholder="Puntos principales que aprenderán los alumnos (un punto por línea, ej:&#10;• Técnicas prácticas para ejercitar la memoria&#10;• Ejercicios de concentración adaptados a la vida cotidiana)"
+          />
+          <p className="mt-1 text-xs text-gray-400">
+            Se mostrará con viñetas en la sección &quot;💡 Qué aprenderás&quot; de la página del taller.
+          </p>
+        </div>
+        <div>
+          <label className="mb-1 block text-xs font-semibold uppercase tracking-wide text-primary-dark">
+            Requisitos (opcional)
+          </label>
+          <textarea className="input h-20 resize-none" name="requisitos" placeholder="Requisitos (opcional)" />
+        </div>
       </div>
 
       <div className="card">

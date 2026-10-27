@@ -111,20 +111,35 @@ export default async function TallerDetallePage({
                   <span>💡</span>
                   <h3>Qué aprenderás</h3>
                 </div>
-                <ul className="space-y-3 text-xs text-gray-600">
-                  <li className="flex items-start gap-2">
-                    <span className="text-indigo-500 font-bold">•</span>
-                    Técnicas prácticas para ejercitar la memoria y agilidad mental.
-                  </li>
-                  <li className="flex items-start gap-2">
-                    <span className="text-indigo-500 font-bold">•</span>
-                    Ejercicios de concentración adaptados a la vida cotidiana.
-                  </li>
-                  <li className="flex items-start gap-2">
-                    <span className="text-indigo-500 font-bold">•</span>
-                    Estrategias de organización para hábitos diarios.
-                  </li>
-                </ul>
+                {taller.queAprenderas ? (
+                  <ul className="space-y-3 text-xs text-gray-600">
+                    {taller.queAprenderas
+                      .split("\n")
+                      .map((p) => p.trim())
+                      .filter(Boolean)
+                      .map((punto, idx) => (
+                        <li key={idx} className="flex items-start gap-2">
+                          <span className="text-indigo-500 font-bold">•</span>
+                          <span>{punto.replace(/^[•\-\*]\s*/, "")}</span>
+                        </li>
+                      ))}
+                  </ul>
+                ) : (
+                  <ul className="space-y-3 text-xs text-gray-600">
+                    <li className="flex items-start gap-2">
+                      <span className="text-indigo-500 font-bold">•</span>
+                      Técnicas prácticas para ejercitar la memoria y agilidad mental.
+                    </li>
+                    <li className="flex items-start gap-2">
+                      <span className="text-indigo-500 font-bold">•</span>
+                      Ejercicios de concentración adaptados a la vida cotidiana.
+                    </li>
+                    <li className="flex items-start gap-2">
+                      <span className="text-indigo-500 font-bold">•</span>
+                      Estrategias de organización para hábitos diarios.
+                    </li>
+                  </ul>
+                )}
               </div>
 
               {/* Caja Requisitos */}
@@ -255,9 +270,9 @@ export default async function TallerDetallePage({
   </button>
 )}
 
-              <button className="flex w-full items-center justify-center gap-2 rounded-xl border border-gray-200 bg-white py-3 text-xs font-bold text-slate-700 hover:bg-gray-50 transition-colors shadow-2xs">
+              {/* <button className="flex w-full items-center justify-center gap-2 rounded-xl border border-gray-200 bg-white py-3 text-xs font-bold text-slate-700 hover:bg-gray-50 transition-colors shadow-2xs">
                 📥 Descargar Programa (PDF)
-              </button>
+              </button> */}
             </div>
           </aside>
 

@@ -27,6 +27,7 @@ export default async function EditarTallerPage({ params }: { params: { tallerId:
           horaFin: taller.horaFin,
           cuposTotales: taller.cuposTotales,
           requisitos: taller.requisitos,
+          queAprenderas: taller.queAprenderas,
           materialUrl: taller.materialUrl,
           esPago: taller.esPago,
           precio: taller.precio ? Number(taller.precio) : null,
