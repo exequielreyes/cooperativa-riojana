@@ -28,7 +28,12 @@ export default async function ConfiguracionSocioPage() {
       <CambiarPasswordForm />
 
       <div className="card">
-        <p className="mb-4 font-medium text-primary-dark">Preferencias de Notificaciones</p>
+        <div className="mb-4 flex items-center justify-between">
+          <p className="font-medium text-primary-dark">Preferencias de Notificaciones</p>
+          <span className="rounded-full bg-amber-50 border border-amber-200 px-3 py-1 text-xs font-semibold text-amber-800 shadow-2xs">
+            Próximamente
+          </span>
+        </div>
         <table className="w-full text-sm">
           <thead>
             <tr className="text-left text-xs text-gray-400">
@@ -40,9 +45,22 @@ export default async function ConfiguracionSocioPage() {
           <tbody>
             {["Reportes", "Confirmaciones de pago", "Noticias Institucionales"].map((tipo) => (
               <tr key={tipo} className="border-t border-surface-border">
-                <td className="py-2.5">{tipo}</td>
-                <td className="py-2.5"><input type="checkbox" defaultChecked /></td>
-                <td className="py-2.5"><input type="checkbox" /></td>
+                <td className="py-2.5 text-gray-600">{tipo}</td>
+                <td className="py-2.5">
+                  <input
+                    type="checkbox"
+                    defaultChecked
+                    disabled
+                    className="cursor-not-allowed opacity-50 accent-primary"
+                  />
+                </td>
+                <td className="py-2.5">
+                  <input
+                    type="checkbox"
+                    disabled
+                    className="cursor-not-allowed opacity-50 accent-primary"
+                  />
+                </td>
               </tr>
             ))}
           </tbody>

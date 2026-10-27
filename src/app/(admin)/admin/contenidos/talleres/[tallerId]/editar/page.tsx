@@ -31,6 +31,7 @@ export default async function EditarTallerPage({ params }: { params: { tallerId:
           esPago: taller.esPago,
           precio: taller.precio ? Number(taller.precio) : null,
           descuento: taller.descuento,
+          imagenUrl: taller.imagenUrl,
         }}
       />
     </div>

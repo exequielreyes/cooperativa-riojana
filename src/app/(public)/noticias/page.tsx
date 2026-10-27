@@ -1,24 +1,14 @@
 import Image from "next/image";
 import Link from "next/link";
 import { prisma } from "@/lib/db";
-import { formatDate } from "@/lib/utils";
+import { formatDate, limpiarMarkdown } from "@/lib/utils";
 import { Pagination } from "@/components/noticias/Pagination";
 
 const PAGE_SIZE = 6;
 
 
 
-//Funcion para limpiar sintaxis Markdown/Embeds para mostrar resúmenes limpios en las tarjetas
-function limpiarMarkdown(texto: string = ""): string {
-  return texto
-    .replace(/\{\{video:[^}]+\}\}/g, "") // Elimina videos incrustados
-    .replace(/^#{1,6}\s+/gm, "")         // Elimina encabezados (##, ###)
-    .replace(/\[([^\]]+)\]\([^)]+\)/g, "$1") // Links -> texto visible
-    .replace(/\*\*([^*]+)\*\*/g, "$1")   // Negritas -> texto plano
-    .replace(/\*([^*]+)\*/g, "$1")       // Cursivas -> texto plano
-    .replace(/\s+/g, " ")                // Espacios y saltos extra -> un solo espacio
-    .trim();
-}
+
 
 
 // Función auxiliar para calcular tiempo de lectura aproximado

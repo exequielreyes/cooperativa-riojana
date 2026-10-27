@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { useEffect, useRef, useState } from "react";
+import { usePathname } from "next/navigation";
 import { useSession, signOut } from "next-auth/react";
 import { User, FileText, Wrench, Settings, LogOut, ChevronDown, Ticket } from "lucide-react";
 import Image from "next/image";
@@ -26,6 +27,7 @@ const menuSocio = [
 ];
 
 export function SiteHeader() {
+  const pathname = usePathname();
   const { data: session, status } = useSession();
   const [abierto, setAbierto] = useState(false);
   const menuRef = useRef<HTMLDivElement>(null);
@@ -61,12 +63,37 @@ export function SiteHeader() {
             priority
           />
         </Link>
-        <nav className="hidden gap-6 text-sm text-gray-600 md:flex">
+        {/* <nav className="hidden gap-6 text-sm text-gray-600 md:flex">
           {navLinks.map((link) => (
             <Link key={link.href} href={link.href} className="hover:text-primary">
               {link.label}
             </Link>
           ))}
+        </nav> */}
+
+{/* Navegación con indicador activo */}
+        <nav className="hidden gap-8 text-sm font-medium md:flex">
+          {navLinks.map((link) => {
+            const isActive =
+              link.href === "/"
+                ? pathname === "/"
+                : pathname === link.href || pathname?.startsWith(`${link.href}/`);
+
+            return (
+              <Link
+                key={link.href}
+                href={link.href}
+                className={`relative py-1 transition-colors ${
+                  isActive ? "text-primary font-semibold" : "text-gray-600 hover:text-primary"
+                }`}
+              >
+                {link.label}
+                {isActive && (
+                  <span className="absolute bottom-0 left-0 h-[2px] w-full rounded-full bg-primary transition-all duration-300" />
+                )}
+              </Link>
+            );
+          })}
         </nav>
 
         <div className="flex items-center gap-5">

@@ -2,7 +2,7 @@ import Image from "next/image";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { prisma } from "@/lib/db";
-import { formatDate } from "@/lib/utils";
+import { formatDate, limpiarMarkdown } from "@/lib/utils";
 import { TextoConFormato } from "@/components/TextoConFormato";
 import { ContenidoNoticia } from "@/components/ContenidoNoticia";
 
@@ -133,7 +133,7 @@ export default async function NoticiaDetallePage({ params }: { params: { slug: s
                         {item.titulo}
                       </h3>
                       <p className="mt-2 text-xs text-gray-500 line-clamp-2">
-                        {item.contenido}
+                        {limpiarMarkdown(item.contenido)}
                       </p>
                     </div>
                   </div>

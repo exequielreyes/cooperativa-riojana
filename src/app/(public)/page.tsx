@@ -1,7 +1,7 @@
 import Link from "next/link";
 import Image from "next/image";
 import { prisma } from "@/lib/db";
-import { formatDate } from "@/lib/utils";
+import { formatDate, limpiarMarkdown } from "@/lib/utils";
 
 // TODO: reemplazar por fetch a /api/noticias y /api/talleres (últimas publicadas)
 // const ultimasNoticias = [
@@ -99,11 +99,14 @@ export default async function HomePage() {
     <section className="mx-auto max-w-6xl px-6 py-16">
         <div className="mb-10 flex items-end justify-between border-b border-surface-border pb-3">
           <div>
-            <h2 className="text-2xl font-bold text-primary">Últimas Noticias</h2>
-            <p className="mt-1 text-sm text-gray-500">Mantenete informado sobre la actualidad de nuestra cooperativa y comunidad.</p>
+            <span className="text-xs font-bold uppercase tracking-widest text-accent">Novedades</span>
+
+            <h2 className="text-3xl font-bold tracking-tight text-primary mt-1">Últimas Noticias</h2>
+            <p className="mt-2 text-sm text-slate-500 max-w-xl">Mantenete informado sobre la actualidad de nuestra cooperativa y comunidad.</p>
           </div>
-          <Link href="/noticias" className="text-xs font-medium text-gray-500 hover:text-primary hover:underline">
+          <Link href="/noticias" className="group inline-flex items-center gap-1.5 text-xs font-semibold uppercase tracking-wider text-primary transition-colors hover:text-accent ">
             Ver todas las noticias
+            <span className="transition-transform duration-200 group-hover:translate-x-1">→</span>
           </Link>
         </div>
 
@@ -114,7 +117,7 @@ export default async function HomePage() {
         ) : (
           <div className="grid gap-8 md:grid-cols-3">
             {ultimasNoticias.map((noticia) => (
-              <Link key={noticia.id || noticia.slug} href={`/noticias/${noticia.slug}`} className="group card-news block overflow-hidden bg-white shadow-sm hover:shadow-lg transition-shadow duration-300 rounded-lg border border-surface-border">
+              <Link key={noticia.id || noticia.slug} href={`/noticias/${noticia.slug}`} className="group flex flex-col rounded-2xl bg-white border border-slate-200/80 overflow-hidden shadow-sm transition-all duration-300 hover:shadow-xl hover:border-slate-300 hover:-translate-y-1">
 
                 <div className="relative aspect-[16/9] w-full overflow-hidden bg-gray-100">
                   <Image
@@ -124,16 +127,30 @@ export default async function HomePage() {
                     sizes="(max-width: 768px) 100vw, 33vw"
                     className="h-full w-full object-cover group-hover:scale-105 transition-transform duration-300"
                   />
+                  {/* {noticia.categoria && (
+                    <span className="absolute top-3 left-3 rounded-full bg-primary-dark/80 backdrop-blur-md px-3 py-1 text-[11px] font-semibold text-white tracking-wide">
+                      {noticia.categoria}
+                    </span>
+                  )} */}
                 </div>
-                <div className="p-5">
+                <div className="flex flex-1 flex-col justify-between p-6">
+                  <div>
                   <p className="mb-2 text-xs font-medium uppercase text-accent">
                     {noticia.categoria} {noticia.fechaPublicacion ? `· ${formatDate(noticia.fechaPublicacion)}` : ''}
                   </p>
-                  <p className="font-semibold text-lg text-primary leading-snug">{noticia.titulo}</p>
-                  <p className="mt-3 text-sm text-gray-600 line-clamp-3">
-                    {noticia.contenido}
+                  <p className="text-lg font-bold text-slate-900 group-hover:text-primary transition-colors line-clamp-2">{noticia.titulo}</p>
+                  <p className="mt-3 text-sm text-gray-600 line-clamp-3 leading-relaxed">
+                    {limpiarMarkdown(noticia.contenido)}
                   </p>
-                  <p className="mt-4 text-xs font-semibold text-primary group-hover:underline">Leer más</p>
+                </div>
+                  <div className="mt-6 pt-4 border-t border-slate-100 flex items-center justify-between">
+                    <span className="text-xs font-semibold text-primary group-hover:text-accent transition-colors">
+                      Leer artículo completo
+                    </span>
+                    <span className="text-slate-400 transition-transform duration-200 group-hover:translate-x-1 group-hover:text-accent">
+                      →
+                    </span>
+                  </div>
                 </div>
               </Link>
             ))}
@@ -141,31 +158,40 @@ export default async function HomePage() {
         )}
       </section>
 
- <section className="mx-auto max-w-6xl px-6 py-20 text-center">
-        <h2 className="text-3xl font-bold text-primary">Nuevos horizontes</h2>
-        <p className="mt-3 text-gray-600 max-w-xl mx-auto">
+ <section className="relative mx-auto max-w-7xl px-6  py-16 lg:px-8">
+   <div className="text-center max-w-2xl mx-auto mb-16">
+    <span className="text-xs font-bold uppercase tracking-widest text-accent">Futuro & Crecimiento</span>
+        <h2 className="text-3xl font-bold tracking-tight text-primary mt-2">Nuevos horizontes</h2>
+        <p className="mt-3 text-slate-600 max-w-xl mx-auto">
           Estamos trabajando para ampliar nuestros servicios y brindarte más soluciones integrales para tu vida cotidiana.
         </p>
+        </div>
         <div className="mt-12 grid gap-6 md:grid-cols-3">
           {[
             { icon: '🛒', label: 'Consumo Responsable', text: 'Red de comercios adheridos con descuentos directos y financiación en compras de canasta básica y tecnología.', status: 'PROXIMAMENTE' },
             { icon: '📈', label: 'Líneas de Crédito', text: 'Microcréditos personales con las tasas más bajas del mercado, diseñados para emprendedores y proyectos familiares.', status: 'PROXIMAMENTE' },
             { icon: '🏠', label: 'Plan Vivienda', text: 'Acceso a tu casa propia mediante sistemas de ahorro previo y construcción cooperativa. Un sueño cada vez más cerca.', status: 'PROXIMAMENTE' },
           ].map(item => (
-            <div key={item.label} className="relative card block p-8 text-center border border-surface-border">
-              <span className="absolute top-4 right-4 text-xs font-bold text-accent bg-accent/10 px-2.5 py-1 rounded-full">{item.status}</span>
-              <span className="icon-surface-muted text-3xl mx-auto mb-5">
-                {item.icon}
-              </span>
+            <div key={item.label} className="relative rounded-2xl border border-slate-200/80 bg-white p-8 shadow-sm transition-all duration-300 hover:shadow-lg hover:border-slate-300 flex flex-col justify-between">
+              <div>
+                 <div className="flex items-center justify-between mb-3">
+              <span className="inline-flex h-14 w-14 items-center justify-center rounded-2xl bg-slate-50 border border-slate-100 text-2xl shadow-inner">
+                    {item.icon}
+                  </span>
+                  <span className="rounded-full bg-accent/10 px-3 py-1 text-[10px] font-bold tracking-wider text-accent border border-accent/20">
+                    {item.status}
+                  </span>
+              </div>
               <p className="font-semibold text-lg text-primary">{item.label}</p>
-              <p className="mt-3 text-sm text-gray-600 leading-relaxed">{item.text}</p>
+              <p className="mt-3 text-sm text-slate-600 leading-relaxed">{item.text}</p>
+              </div>
             </div>
           ))}
         </div>
       </section>
 
 
-      <section className="bg-primary">
+      <section className="bg-primary mt-10">
         <div className="mx-auto flex max-w-6xl flex-col items-center gap-6 px-6 py-20 text-center text-white">
           <h2 className="text-3xl font-extrabold leading-tight">¿Aún no sos parte de nuestra familia?</h2>
           <p className="max-w-xl text-white/90">
