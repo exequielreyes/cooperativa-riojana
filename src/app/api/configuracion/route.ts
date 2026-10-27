@@ -16,8 +16,8 @@ export async function GET() {
 const configuracionSchema = z.object({
   montoCuotaActual: z.coerce.number().positive().optional(),
   montoCapitalActual: z.coerce.number().positive().optional(),
-  cbu: z.string().optional(),
-  alias: z.string().optional(),
+  cbu: z.string().optional().nullable(),
+  alias: z.string().optional().nullable(),
 });
 
 export async function PATCH(request: NextRequest) {

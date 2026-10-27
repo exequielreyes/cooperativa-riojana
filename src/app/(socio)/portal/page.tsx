@@ -148,16 +148,17 @@ export default async function PortalDashboardPage() {
 
         <aside className="space-y-6">
           <div className="card">
-            <p className="mb-3 font-medium text-primary-dark">Novedades Socio</p>
-            <div className="space-y-3 text-sm">
-              <div>
-                <p className="badge-danger mb-1 w-fit">Urgente</p>
-                <p className="text-gray-700">Asamblea Anual Ordinaria: se convoca a la reunión presencial el próximo 20/03.</p>
-              </div>
-              <div>
-                <p className="badge-warning mb-1 w-fit">Nuevo</p>
-                <p className="text-gray-700">Alianza con Farmacias: presentando tu carnet digital obtén un 20% de descuento.</p>
-              </div>
+            <div className="flex items-center justify-between mb-3">
+              <p className="font-medium text-primary-dark">Novedades Socio</p>
+              <span className="badge bg-amber-50 text-amber-700 border border-amber-200/60 font-semibold text-[11px]">
+                Próximamente
+              </span>
+            </div>
+            <div className="rounded-xl border border-dashed border-gray-200 bg-gray-50/50 p-6 text-center">
+              <p className="text-sm font-semibold text-gray-700">Próximamente</p>
+              <p className="mt-1 text-xs text-gray-400">
+                Pronto vas a poder ver anuncios, circulares y beneficios exclusivos para socios en esta sección.
+              </p>
             </div>
           </div>
           <div className="card">
@@ -165,7 +166,12 @@ export default async function PortalDashboardPage() {
             <p className="mb-3 text-sm text-gray-500">
               Contáctate con nuestro equipo de atención al socio para resolver dudas.
             </p>
-            <button className="btn-primary w-full">Contactar Soporte</button>
+            <Link
+              href="/contacto"
+              className="btn-primary block w-full text-center"
+            >
+              Contactar Soporte
+            </Link>
           </div>
         </aside>
       </div>
