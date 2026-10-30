@@ -184,10 +184,11 @@ export default function NuevoSocioPage() {
               <label className="mb-1 block text-sm text-gray-500">Región</label>
               <select className="input" name="region" defaultValue="" required>
                 <option value="" disabled>Seleccione una región</option>
-                <option value="Zona Sur">Zona Sur</option>
-                <option value="Zona Norte">Zona Norte</option>
-                <option value="Zona Este">Zona Este</option>
-                <option value="Zona Oeste">Zona Oeste</option>
+                {Array.from({ length: 20 }, (_, i) => `Zona ${i + 1}`).map((zona) => (
+                  <option key={zona} value={zona}>
+                    {zona}
+                  </option>
+                ))}
               </select>
             </div>
           </div>

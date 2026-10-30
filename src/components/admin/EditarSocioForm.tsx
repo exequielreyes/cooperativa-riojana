@@ -98,11 +98,11 @@ export function EditarSocioForm({ socio }: { socio: SocioEditable }) {
           {credenciales.emailEnviado ? (
             <p className="mb-4 text-sm text-gray-600">
               Le enviamos las credenciales por email a <strong>{credenciales.email}</strong>.
-              Este es un resumen por si lo necesitÃ¡s compartir de otra forma:
+              Este es un resumen por si lo necesitás compartir de otra forma:
             </p>
           ) : (
             <p className="mb-4 text-sm text-gray-600">
-              No se pudo enviar el email automatico (revisa¡ la configuración
+              No se pudo enviar el email automático (revisá la configuración
               de Resend). Compartile estas credenciales al socio manualmente:
             </p>
           )}
@@ -173,10 +173,11 @@ export function EditarSocioForm({ socio }: { socio: SocioEditable }) {
             <label className="mb-1 block text-sm text-gray-500">Región</label>
             <select className="input" name="region" defaultValue={socio.region}>
               <option value="">Seleccione una región</option>
-              <option value="Zona Sur">Zona Sur</option>
-              <option value="Zona Norte">Zona Norte</option>
-              <option value="Zona Este">Zona Este</option>
-              <option value="Zona Oeste">Zona Oeste</option>
+              {Array.from({ length: 20 }, (_, i) => `Zona ${i + 1}`).map((zona) => (
+                <option key={zona} value={zona}>
+                  {zona}
+                </option>
+              ))}
             </select>
           </div>
           <div>
