@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/db";
+import { guardarArchivo, MAX_FILE_SIZE, TIPOS_PERMITIDOS_COMPROBANTE } from "@/lib/storage";
 
 export async function POST(
   request: NextRequest,
@@ -41,7 +42,15 @@ export async function POST(
   if (formData) {
     const file = formData.get("comprobante") as File | null;
     if (file && file.size > 0) {
-      const { guardarArchivo } = await import("@/lib/storage");
+      if (file.size > MAX_FILE_SIZE) {
+        return NextResponse.json({ error: "El comprobante supera los 5MB" }, { status: 400 });
+      }
+      if (!TIPOS_PERMITIDOS_COMPROBANTE.includes(file.type)) {
+        return NextResponse.json(
+          { error: "Formato de comprobante no admitido (usá JPG, PNG o PDF)" },
+          { status: 400 }
+        );
+      }
       comprobanteUrl = await guardarArchivo(file, "comprobantes-talleres");
     }
   }

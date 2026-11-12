@@ -5,12 +5,33 @@ import { prisma } from "@/lib/db";
 import { guardarArchivo, MAX_FILE_SIZE, TIPOS_PERMITIDOS_COMPROBANTE } from "@/lib/storage";
 
 export async function GET() {
-  const pagos = await prisma.pago.findMany({
-    include: { socio: true, cuota: true },
-    orderBy: { fechaPago: "desc" },
-    take: 50,
-  });
-  return NextResponse.json(pagos);
+  const session = await getServerSession(authOptions);
+  if (!session) {
+    return NextResponse.json({ error: "No autorizado" }, { status: 401 });
+  }
+
+  // Si es SUPER_ADMIN o COBRADOR, puede ver los pagos de la cooperativa
+  if (session.user.rol === "SUPER_ADMIN" || session.user.rol === "COBRADOR") {
+    const pagos = await prisma.pago.findMany({
+      include: { socio: true, cuota: true },
+      orderBy: { fechaPago: "desc" },
+      take: 50,
+    });
+    return NextResponse.json(pagos);
+  }
+
+  // Si es SOCIO, solo puede consultar sus propios pagos
+  if (session.user.socioId) {
+    const pagos = await prisma.pago.findMany({
+      where: { socioId: session.user.socioId },
+      include: { cuota: true },
+      orderBy: { fechaPago: "desc" },
+      take: 50,
+    });
+    return NextResponse.json(pagos);
+  }
+
+  return NextResponse.json({ error: "No autorizado" }, { status: 403 });
 }
 
 export async function POST(request: NextRequest) {

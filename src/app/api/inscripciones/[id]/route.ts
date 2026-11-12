@@ -30,16 +30,21 @@ export async function PATCH(
     return NextResponse.json({ error: "No encontrada" }, { status: 404 });
   }
 
-  const esAdmin = session.user.rol !== "SOCIO";
+  const taller = await prisma.taller.findUnique({ where: { id: inscripcion.tallerId } });
+  const rol = session.user.rol;
+  const puedeGestionar =
+    rol === "SUPER_ADMIN" ||
+    rol === "EDITOR_CONTENIDOS" ||
+    (rol === "PROFESOR" && taller?.profesorId === session.user.id);
   const esDueño = session.user.socioId === inscripcion.socioId;
 
-  if (!esAdmin && !esDueño) {
+  if (!puedeGestionar && !esDueño) {
     return NextResponse.json({ error: "No autorizado" }, { status: 403 });
   }
 
   // El socio sólo puede cancelar su propia inscripción, y sólo dentro de los
   // primeros 2 días desde que se inscribió.
-  if (!esAdmin) {
+  if (!puedeGestionar) {
     if (parsed.data.estado !== "CANCELADO") {
       return NextResponse.json({ error: "No autorizado" }, { status: 403 });
     }

@@ -27,7 +27,7 @@ export async function PATCH(
   { params }: { params: { id: string } }
 ) {
   const session = await getServerSession(authOptions);
-  if (!session || session.user.rol === "SOCIO") {
+  if (!session || (session.user.rol !== "SUPER_ADMIN" && session.user.rol !== "EDITOR_CONTENIDOS")) {
     return NextResponse.json({ error: "No autorizado" }, { status: 403 });
   }
 
@@ -115,7 +115,7 @@ export async function PATCH(
 
 export async function DELETE(_req: NextRequest, { params }: { params: { id: string } }) {
   const session = await getServerSession(authOptions);
-  if (!session || session.user.rol === "SOCIO") {
+  if (!session || (session.user.rol !== "SUPER_ADMIN" && session.user.rol !== "EDITOR_CONTENIDOS")) {
     return NextResponse.json({ error: "No autorizado" }, { status: 403 });
   }
 

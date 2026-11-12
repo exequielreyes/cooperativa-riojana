@@ -4,7 +4,7 @@ import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/db";
 import bcrypt from "bcryptjs";
 import { z } from "zod";
-
+import { generarPasswordSegura } from "@/lib/security";
 
 const crearProfesorSchema = z.object({
   nombre: z.string().min(1, "El nombre es requerido"),
@@ -32,7 +32,7 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: "Ya existe un usuario con ese correo." }, { status: 409 });
     }
 
-    const passwordTemporal = Math.random().toString(36).slice(-10);
+    const passwordTemporal = generarPasswordSegura(12);
     const passwordHash = await bcrypt.hash(passwordTemporal, 10);
 
     const rolFinal = parsed.data.rol;
@@ -54,7 +54,8 @@ export async function POST(request: NextRequest) {
       },
     });
 
-    return NextResponse.json({ usuario, passwordTemporal }, { status: 201 });
+    const { passwordHash: _, ...usuarioSinHash } = usuario;
+    return NextResponse.json({ usuario: usuarioSinHash, passwordTemporal }, { status: 201 });
   } catch (error) {
     console.error("Error al crear usuario:", error);
     return NextResponse.json(

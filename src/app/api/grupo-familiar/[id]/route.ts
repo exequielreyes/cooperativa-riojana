@@ -25,7 +25,7 @@ export async function DELETE(
     return NextResponse.json({ error: "No autorizado" }, { status: 403 });
   }
 
-  const esAdmin = session.user.rol !== "SOCIO";
+  const esAdmin = session.user.rol === "SUPER_ADMIN";
   const socioId = session.user.socioId;
 
   const asociado = await prisma.grupoFamiliar.findUnique({ where: { id: params.id } });
@@ -67,7 +67,7 @@ export async function PUT(
     return NextResponse.json({ error: "No autorizado" }, { status: 403 });
   }
 
-  const esAdmin = session.user.rol !== "SOCIO";
+  const esAdmin = session.user.rol === "SUPER_ADMIN";
   const socioId = session.user.socioId;
 
   const asociado = await prisma.grupoFamiliar.findUnique({ where: { id: params.id } });

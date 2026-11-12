@@ -3,6 +3,7 @@ import { z } from "zod";
 import bcrypt from "bcryptjs";
 import { prisma } from "@/lib/db";
 import { hashearToken } from "@/lib/passwordReset";
+import { checkRateLimit } from "@/lib/security";
 
 const schema = z.object({
   token: z.string().min(1),
@@ -10,6 +11,15 @@ const schema = z.object({
 });
 
 export async function POST(request: NextRequest) {
+  const ip = request.headers.get("x-forwarded-for")?.split(",")[0]?.trim() || "local";
+  const rateLimit = checkRateLimit(`reset_${ip}`, 5, 60000);
+  if (!rateLimit.allowed) {
+    return NextResponse.json(
+      { error: "Demasiados intentos de restablecimiento. Por favor, aguardá un momento antes de volver a intentar." },
+      { status: 429 }
+    );
+  }
+
   const body = await request.json().catch(() => null);
   const parsed = schema.safeParse(body);
 

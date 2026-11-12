@@ -35,7 +35,7 @@ const crearTallerSchema = z.object({
 
 export async function POST(request: NextRequest) {
   const session = await getServerSession(authOptions);
-  if (!session || session.user.rol === "SOCIO") {
+  if (!session || (session.user.rol !== "SUPER_ADMIN" && session.user.rol !== "EDITOR_CONTENIDOS")) {
     return NextResponse.json({ error: "No autorizado" }, { status: 403 });
   }
 

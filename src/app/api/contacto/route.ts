@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
 import { enviarEmailContacto } from "@/lib/email";
+import { checkRateLimit } from "@/lib/security";
 
 const contactoSchema = z.object({
   nombre: z.string().min(1, "El nombre es obligatorio"),
@@ -10,6 +11,15 @@ const contactoSchema = z.object({
 });
 
 export async function POST(request: NextRequest) {
+  const ip = request.headers.get("x-forwarded-for")?.split(",")[0]?.trim() || "local";
+  const rateLimit = checkRateLimit(`contacto_${ip}`, 5, 60000);
+  if (!rateLimit.allowed) {
+    return NextResponse.json(
+      { error: "Demasiadas consultas enviadas. Por favor, aguardá un momento antes de volver a intentar." },
+      { status: 429 }
+    );
+  }
+
   const body = await request.json().catch(() => null);
   const parsed = contactoSchema.safeParse(body);
 

@@ -5,6 +5,7 @@ import { prisma } from "@/lib/db";
 import bcrypt from "bcryptjs";
 import { z } from "zod";
 import { enviarEmailCredenciales } from "@/lib/email";
+import { generarPasswordSegura } from "@/lib/security";
 
 const editarSocioSchema = z.object({
   nombre: z.string().min(1).optional(),
@@ -27,6 +28,17 @@ const editarSocioSchema = z.object({
 });
 
 export async function GET(_req: NextRequest, { params }: { params: { id: string } }) {
+  const session = await getServerSession(authOptions);
+  if (!session) {
+    return NextResponse.json({ error: "No autorizado" }, { status: 401 });
+  }
+
+  const esAdmin = session.user.rol === "SUPER_ADMIN" || session.user.rol === "COBRADOR";
+  const esPropioSocio = session.user.socioId === params.id;
+  if (!esAdmin && !esPropioSocio) {
+    return NextResponse.json({ error: "No autorizado" }, { status: 403 });
+  }
+
   const socio = await prisma.socio.findUnique({ where: { id: params.id } });
   if (!socio) return NextResponse.json({ error: "No encontrado" }, { status: 404 });
   return NextResponse.json(socio);
@@ -34,7 +46,7 @@ export async function GET(_req: NextRequest, { params }: { params: { id: string 
 
 export async function PATCH(request: NextRequest, { params }: { params: { id: string } }) {
   const session = await getServerSession(authOptions);
-  if (!session || session.user.rol === "SOCIO") {
+  if (!session || session.user.rol !== "SUPER_ADMIN") {
     return NextResponse.json({ error: "No autorizado" }, { status: 403 });
   }
 
@@ -58,7 +70,7 @@ export async function PATCH(request: NextRequest, { params }: { params: { id: st
   let emailEnviado = false;
 
   if (aprobando) {
-    passwordTemporal = Math.random().toString(36).slice(-10);
+    passwordTemporal = generarPasswordSegura(12);
     const passwordHash = await bcrypt.hash(passwordTemporal, 10);
     await prisma.usuario.update({
       where: { id: socioActual.usuarioId },

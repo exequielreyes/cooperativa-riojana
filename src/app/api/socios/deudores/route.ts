@@ -7,7 +7,7 @@ import { cookies } from "next/headers";
 
 export async function GET(request: NextRequest) {
   const session = await getServerSession(authOptions);
-  if (!session || session.user.rol === "SOCIO") {
+  if (!session || (session.user.rol !== "SUPER_ADMIN" && session.user.rol !== "COBRADOR")) {
     return NextResponse.json({ error: "No autorizado" }, { status: 403 });
   }
 

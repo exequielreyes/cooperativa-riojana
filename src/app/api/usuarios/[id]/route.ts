@@ -8,12 +8,20 @@ export async function DELETE(
   { params }: { params: { id: string } }
 ) {
   const session = await getServerSession(authOptions);
-  
+
   if (session?.user.rol !== "SUPER_ADMIN") {
     return NextResponse.json({ error: "No autorizado" }, { status: 403 });
   }
 
   const { id } = params;
+
+  // Evitar que el Super Admin elimine su propia cuenta
+  if (id === session.user.id) {
+    return NextResponse.json(
+      { error: "No podés eliminar tu propia cuenta de administrador." },
+      { status: 400 }
+    );
+  }
 
   try {
     await prisma.usuario.delete({
