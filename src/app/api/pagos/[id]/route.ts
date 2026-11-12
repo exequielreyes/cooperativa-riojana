@@ -16,7 +16,7 @@ export async function PATCH(
   { params }: { params: { id: string } }
 ) {
   const session = await getServerSession(authOptions);
-  if (!session || session.user.rol === "SOCIO") {
+  if (!session || session.user.rol !== "SUPER_ADMIN") {
     return NextResponse.json({ error: "No autorizado" }, { status: 403 });
   }
 

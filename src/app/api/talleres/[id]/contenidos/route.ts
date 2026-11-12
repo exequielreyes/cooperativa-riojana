@@ -22,6 +22,42 @@ export async function GET(
   _request: NextRequest,
   { params }: { params: { id: string } }
 ) {
+  const session = await getServerSession(authOptions);
+  if (!session) {
+    return NextResponse.json({ error: "No autorizado" }, { status: 401 });
+  }
+
+  const taller = await prisma.taller.findUnique({
+    where: { id: params.id },
+  });
+  if (!taller) {
+    return NextResponse.json({ error: "Taller no encontrado" }, { status: 404 });
+  }
+
+  const rol = session.user.rol;
+  const esAdminOEditor = esEditor(rol);
+  const esProfesorAsignado = rol === "PROFESOR" && taller.profesorId === session.user.id;
+
+  let tieneAcceso = esAdminOEditor || esProfesorAsignado;
+
+  if (!tieneAcceso && session.user.socioId) {
+    const inscripcion = await prisma.inscripcionTaller.findUnique({
+      where: {
+        tallerId_socioId: { tallerId: params.id, socioId: session.user.socioId },
+      },
+    });
+    if (inscripcion && inscripcion.estado === "CONFIRMADO") {
+      tieneAcceso = true;
+    }
+  }
+
+  if (!tieneAcceso) {
+    return NextResponse.json(
+      { error: "No autorizado para ver los contenidos de este taller" },
+      { status: 403 }
+    );
+  }
+
   const contenidos = await prisma.contenidoTaller.findMany({
     where: { tallerId: params.id },
     orderBy: { orden: "asc" },
@@ -94,38 +130,24 @@ export async function POST(
     }
   }
 
-  const totalActual = await prisma.contenidoTaller.count({ where: { tallerId: params.id } });
+  // Calculamos el siguiente orden al final de la lista
+  const ultimo = await prisma.contenidoTaller.findFirst({
+    where: { tallerId: params.id },
+    orderBy: { orden: "desc" },
+    select: { orden: true },
+  });
+  const orden = (ultimo?.orden ?? -1) + 1;
 
   const contenido = await prisma.contenidoTaller.create({
     data: {
       tallerId: params.id,
       titulo: titulo.trim(),
-      descripcion: typeof descripcion === "string" ? descripcion.trim() || null : null,
+      descripcion: typeof descripcion === "string" && descripcion.trim().length > 0 ? descripcion.trim() : null,
       tipo,
       url,
-      orden: totalActual,
+      orden,
     },
   });
-
-  // Notificar a los socios inscriptos
-  const inscriptos = await prisma.inscripcionTaller.findMany({
-    where: {
-      tallerId: params.id,
-      estado: "CONFIRMADO",
-    },
-    select: { socioId: true },
-  });
-
-  if (inscriptos.length > 0) {
-    await prisma.notificacion.createMany({
-      data: inscriptos.map((inscripcion) => ({
-        socioId: inscripcion.socioId,
-        titulo: `Nuevo material en: ${taller.titulo}`,
-        mensaje: `Se ha publicado un nuevo contenido titulado "${contenido.titulo}".`,
-        link: `/portal/talleres/${params.id}/contenido`,
-      })),
-    });
-  }
 
   return NextResponse.json(contenido, { status: 201 });
 }

@@ -60,7 +60,7 @@ export async function POST(request: NextRequest) {
   }
 
   let socioId = session.user.socioId;
-  if (body.socioId && session.user.rol !== "SOCIO") {
+  if (body.socioId && session.user.rol === "SUPER_ADMIN") {
     socioId = body.socioId;
   }
 

@@ -81,9 +81,11 @@ export default async function AdminSociosPage({
     hace30dias.setDate(hace30dias.getDate() - 30);
     whereFiltroExtra = { createdAt: { gte: hace30dias } };
   } else if (filtroExtra === "cumpleanos_mes") {
-    const mes = mesCumpleanos ? parseInt(mesCumpleanos, 10) : new Date().getMonth() + 1;
+    const mesParsed = mesCumpleanos ? parseInt(mesCumpleanos, 10) : new Date().getMonth() + 1;
+    const mes = isNaN(mesParsed) || mesParsed < 1 || mesParsed > 12 ? new Date().getMonth() + 1 : mesParsed;
+    const areaSegura = currentArea === "CONSUMO" ? "CONSUMO" : "SEPELIO";
     // Debemos limitar este query por area actual también si usamos raw
-    const results = await prisma.$queryRaw<{id: string}[]>`SELECT id FROM socios WHERE MONTH(fechaNacimiento) = ${mes} AND area = ${currentArea}`;
+    const results = await prisma.$queryRaw<{id: string}[]>`SELECT id FROM socios WHERE MONTH(fechaNacimiento) = ${mes} AND area = ${areaSegura}`;
     whereFiltroExtra = { id: { in: results.map(r => r.id) } };
   } else if (filtroExtra === "al_dia") {
     const hoy = new Date();

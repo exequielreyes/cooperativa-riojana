@@ -1,8 +1,11 @@
 import { NextRequest, NextResponse } from "next/server";
+import { getServerSession } from "next-auth";
+import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/db";
 import bcrypt from "bcryptjs";
 import { z } from "zod";
 import { enviarEmailCredenciales } from "@/lib/email";
+import { generarPasswordSegura } from "@/lib/security";
 
 const crearSocioSchema = z.object({
   nombre: z.string().min(1),
@@ -25,6 +28,11 @@ const crearSocioSchema = z.object({
 });
 
 export async function GET() {
+  const session = await getServerSession(authOptions);
+  if (!session || (session.user.rol !== "SUPER_ADMIN" && session.user.rol !== "COBRADOR")) {
+    return NextResponse.json({ error: "No autorizado" }, { status: 403 });
+  }
+
   const socios = await prisma.socio.findMany({
     orderBy: { createdAt: "desc" },
     take: 50,
@@ -33,6 +41,9 @@ export async function GET() {
 }
 
 export async function POST(request: NextRequest) {
+  const session = await getServerSession(authOptions);
+  const esSuperAdmin = session?.user?.rol === "SUPER_ADMIN";
+
   const body = await request.json();
   const parsed = crearSocioSchema.safeParse(body);
 
@@ -41,6 +52,11 @@ export async function POST(request: NextRequest) {
   }
 
   const data = parsed.data;
+
+  // Si la solicitud NO proviene de un SUPER_ADMIN autenticado, forzar siempre estado PENDIENTE
+  if (!esSuperAdmin) {
+    data.estado = "PENDIENTE";
+  }
 
   const existente = await prisma.usuario.findUnique({ where: { email: data.email } });
   if (existente) {
@@ -52,13 +68,8 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: "Ya existe un socio registrado con ese DNI." }, { status: 409 });
   }
 
-
-  // La contraseña se genera siempre porque el campo es obligatorio en la
-  // base, pero solo se revela (en la respuesta) y se envía por email cuando
-  // el socio queda ACTIVO. Si queda PENDIENTE, esta clave nunca se muestra
-  // ni se entrega a nadie — el socio recibe una contraseña nueva recién
-  // cuando el admin lo apruebe más adelante (ver PATCH /api/socios/[id]).
-  const passwordTemporal = Math.random().toString(36).slice(-10);
+  // Generación segura de clave temporal con CSPRNG
+  const passwordTemporal = generarPasswordSegura(12);
   const passwordHash = await bcrypt.hash(passwordTemporal, 10);
 
   const año = new Date().getFullYear();
@@ -108,10 +119,10 @@ export async function POST(request: NextRequest) {
         const fechaVencimiento = new Date(fechaActual);
         fechaVencimiento.setMonth(fechaVencimiento.getMonth() + i);
         fechaVencimiento.setDate(10); // Vence los 10 de cada mes
-        
+
         cuotasParaCrear.push({
           socioId: usuario.socio!.id,
-          periodo: `${fechaVencimiento.toLocaleString('es-AR', { month: 'long' })} ${fechaVencimiento.getFullYear()}`,
+          periodo: `${fechaVencimiento.toLocaleString("es-AR", { month: "long" })} ${fechaVencimiento.getFullYear()}`,
           concepto: data.cuotasCapital === 1 ? "Cuota Inicial" : `Cuota Inicial ${i}/${data.cuotasCapital}`,
           monto: montoPorCuota,
           fechaVencimiento,
@@ -122,9 +133,12 @@ export async function POST(request: NextRequest) {
     }
   }
 
+  // Sanitizar el objeto usuario para nunca filtrar el hash de contraseña en la respuesta
+  const { passwordHash: _, ...usuarioSinHash } = usuario;
+
   if (data.estado !== "ACTIVO") {
     // Pendiente: no devolvemos la contraseña bajo ningún concepto.
-    return NextResponse.json({ usuario }, { status: 201 });
+    return NextResponse.json({ usuario: usuarioSinHash }, { status: 201 });
   }
 
   let emailEnviado = false;
@@ -140,7 +154,7 @@ export async function POST(request: NextRequest) {
   }
 
   return NextResponse.json(
-    { usuario, passwordTemporal, emailEnviado },
+    { usuario: usuarioSinHash, passwordTemporal, emailEnviado },
     { status: 201 }
   );
 }

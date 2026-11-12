@@ -12,11 +12,18 @@ function renderizarInline(texto: string) {
 
     const link = parte.match(/^\[([^\]]+)\]\(([^)]+)\)$/);
     if (link) {
+      const url = link[2].trim();
+      // Sanitización contra esquemas peligrosos (javascript:, data:, vbscript:)
+      const esSeguro = /^https?:\/\//i.test(url) || /^mailto:/i.test(url) || url.startsWith("/");
+      if (!esSeguro) {
+        return <Fragment key={i}>{link[1]}</Fragment>;
+      }
+
       return (
         <a
           key={i}
-          href={link[2]}
-          target="_blank"
+          href={url}
+          target={url.startsWith("/") ? undefined : "_blank"}
           rel="noopener noreferrer"
           className="text-primary underline hover:text-primary-light"
         >
