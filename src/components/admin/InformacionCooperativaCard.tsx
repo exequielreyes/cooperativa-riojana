@@ -2,7 +2,9 @@
 
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
+import { signOut } from "next-auth/react";
 import { Building2, CheckCircle2, AlertCircle } from "lucide-react";
+import { PasswordInput } from "@/components/ui/PasswordInput";
 
 interface InformacionCooperativaCardProps {
   cbuInicial: string;
@@ -19,6 +21,10 @@ export function InformacionCooperativaCard({
   const [cuit, setCuit] = useState("30-71000000-9");
   const [cbu, setCbu] = useState(cbuInicial);
   const [alias, setAlias] = useState(aliasInicial);
+
+  const [passwordActual, setPasswordActual] = useState("");
+  const [passwordNueva, setPasswordNueva] = useState("");
+  const [confirmarPassword, setConfirmarPassword] = useState("");
 
   const [guardando, setGuardando] = useState(false);
   const [mensajeExito, setMensajeExito] = useState<string | null>(null);
@@ -39,6 +45,31 @@ export function InformacionCooperativaCard({
     setMensajeExito(null);
     setMensajeError(null);
 
+    const quiereCambiarPassword =
+      passwordActual.trim() !== "" ||
+      passwordNueva.trim() !== "" ||
+      confirmarPassword.trim() !== "";
+
+    if (quiereCambiarPassword) {
+      if (!passwordActual || !passwordNueva || !confirmarPassword) {
+        setMensajeError("Para cambiar la contraseña debés completar los tres campos de contraseña.");
+        setGuardando(false);
+        return;
+      }
+
+      if (passwordNueva.length < 8) {
+        setMensajeError("La contraseña nueva debe tener al menos 8 caracteres.");
+        setGuardando(false);
+        return;
+      }
+
+      if (passwordNueva !== confirmarPassword) {
+        setMensajeError("Las contraseñas nuevas no coinciden.");
+        setGuardando(false);
+        return;
+      }
+    }
+
     try {
       const res = await fetch("/api/configuracion", {
         method: "PATCH",
@@ -49,13 +80,41 @@ export function InformacionCooperativaCard({
         }),
       });
 
-      setGuardando(false);
-
       if (!res.ok) {
+        setGuardando(false);
         setMensajeError("No se pudieron guardar los datos de la cooperativa.");
         return;
       }
 
+      if (quiereCambiarPassword) {
+        const resPass = await fetch("/api/perfil/password", {
+          method: "PATCH",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            passwordActual,
+            passwordNueva,
+          }),
+        });
+
+        if (!resPass.ok) {
+          const dataPass = await resPass.json().catch(() => null);
+          setGuardando(false);
+          setMensajeError(dataPass?.error ?? "No se pudo cambiar la contraseña.");
+          return;
+        }
+
+        setGuardando(false);
+        setPasswordActual("");
+        setPasswordNueva("");
+        setConfirmarPassword("");
+        setMensajeExito("¡Contraseña actualizada! Cerrando sesión...");
+        setTimeout(() => {
+          signOut({ callbackUrl: "/login" });
+        }, 1200);
+        return;
+      }
+
+      setGuardando(false);
       setMensajeExito("¡Datos de la cooperativa y cuenta bancaria guardados exitosamente!");
       router.refresh();
     } catch (err) {
@@ -163,6 +222,46 @@ export function InformacionCooperativaCard({
             <p className="mt-1 text-[11px] text-gray-400">
               Alias de la cuenta para transferencias (CBU / CVU).
             </p>
+          </div>
+        </div>
+
+        <div className="border-t border-surface-border pt-4">
+          <p className="mb-3 text-xs font-semibold text-primary-dark">
+            Cambiar Contraseña del Administrador
+          </p>
+          <div className="grid gap-4 sm:grid-cols-3">
+            <div>
+              <label className="mb-1 block text-xs font-semibold text-gray-600">
+                Contraseña Actual
+              </label>
+              <PasswordInput
+                value={passwordActual}
+                onChange={(e) => setPasswordActual(e.target.value)}
+                placeholder="Contraseña actual"
+              />
+            </div>
+
+            <div>
+              <label className="mb-1 block text-xs font-semibold text-gray-600">
+                Contraseña Nueva
+              </label>
+              <PasswordInput
+                value={passwordNueva}
+                onChange={(e) => setPasswordNueva(e.target.value)}
+                placeholder="Contraseña nueva"
+              />
+            </div>
+
+            <div>
+              <label className="mb-1 block text-xs font-semibold text-gray-600">
+                Confirmar Contraseña Nueva
+              </label>
+              <PasswordInput
+                value={confirmarPassword}
+                onChange={(e) => setConfirmarPassword(e.target.value)}
+                placeholder="Confirmar contraseña"
+              />
+            </div>
           </div>
         </div>
       </form>
