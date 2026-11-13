@@ -3,6 +3,7 @@ import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/db";
 import { guardarArchivo, MAX_FILE_SIZE } from "@/lib/storage";
+import { esLinkSeguro } from "@/lib/links";
 
 const TIPOS_PERMITIDOS_MATERIAL = [
   "application/pdf",
@@ -123,11 +124,10 @@ export async function POST(
     if (typeof enlace !== "string" || enlace.trim().length === 0) {
       return NextResponse.json({ error: "Pegá un link válido" }, { status: 400 });
     }
-    try {
-      url = new URL(enlace.trim()).toString();
-    } catch {
-      return NextResponse.json({ error: "El link no es una URL válida" }, { status: 400 });
+    if (!esLinkSeguro(enlace.trim())) {
+      return NextResponse.json({ error: "El link tiene que empezar con http:// o https://" }, { status: 400 });
     }
+    url = new URL(enlace.trim()).toString();
   }
 
   // Calculamos el siguiente orden al final de la lista

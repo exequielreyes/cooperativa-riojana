@@ -4,6 +4,7 @@ import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/db";
 import { guardarArchivo, MAX_FILE_SIZE, TIPOS_PERMITIDOS_IMAGEN } from "@/lib/storage";
 import { z } from "zod";
+import { esLinkSeguro } from "@/lib/links";
 
 export async function GET() {
   const talleres = await prisma.taller.findMany({
@@ -26,7 +27,11 @@ const crearTallerSchema = z.object({
   cuposTotales: z.coerce.number().int().positive(),
   requisitos: z.string().optional().nullable(),
   queAprenderas: z.string().optional().nullable(),
-  materialUrl: z.string().optional().nullable(),
+  materialUrl: z
+    .string()
+    .refine((v) => v === "" || esLinkSeguro(v), "El link al material tiene que empezar con http:// o https://")
+    .optional()
+    .nullable(),
   esPago: z.boolean().default(false),
   precio: z.coerce.number().optional().nullable(),
   descuento: z.coerce.number().int().optional().nullable(),

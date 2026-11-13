@@ -3,12 +3,18 @@ import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/db";
 import { z } from "zod";
+import { esLinkSeguro } from "@/lib/links";
 
 const patchSchema = z.object({
   pregunta: z.string().trim().optional().nullable(),
   palabrasClave: z.string().min(1).optional(),
   respuesta: z.string().min(1).optional(),
-  link: z.string().trim().optional().nullable(),
+  link: z
+    .string()
+    .trim()
+    .refine((v) => v === "" || esLinkSeguro(v, true), "El link tiene que empezar con / o con https://")
+    .optional()
+    .nullable(),
   linkTexto: z.string().trim().optional().nullable(),
   orden: z.coerce.number().int().optional(),
   activa: z.boolean().optional(),
