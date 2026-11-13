@@ -15,11 +15,39 @@ export async function POST(
 
   const cuota = await prisma.cuota.findUnique({ where: { id: params.id }, include: { pagos: true } });
   if (!cuota) return NextResponse.json({ error: "No encontrada" }, { status: 404 });
+
+  if (cuota.estado === "PAGADO") {
+    return NextResponse.json({ error: "Esta cuota ya está pagada" }, { status: 400 });
+  }
+
   const tienePagoVigente = cuota.pagos.some((p) => p.estadoValidacion !== "RECHAZADO");
   if (tienePagoVigente) {
     return NextResponse.json(
       { error: "Esta cuota ya tiene un pago registrado o en revisión" },
       { status: 409 }
+    );
+  }
+
+  // Validación de orden correlativo: no se pueden saltear cuotas anteriores pendientes
+  const cuotasPendientes = await prisma.cuota.findMany({
+    where: {
+      socioId: cuota.socioId,
+      estado: { in: ["PENDIENTE", "VENCIDO"] },
+    },
+    orderBy: [{ fechaVencimiento: "asc" }, { createdAt: "asc" }],
+  });
+
+  if (cuotasPendientes.length > 0 && cuotasPendientes[0].id !== cuota.id) {
+    const primeraPendiente = cuotasPendientes[0];
+    const periodoEsperado = primeraPendiente.concepto !== "Cuota Social"
+      ? `${primeraPendiente.concepto} (${primeraPendiente.periodo})`
+      : primeraPendiente.periodo;
+
+    return NextResponse.json(
+      {
+        error: `No podés cobrar esta cuota sin haber cobrado antes la cuota anterior pendiente (${periodoEsperado}). Las cuotas deben cobrarse en orden cronológico a partir de la más antigua.`,
+      },
+      { status: 400 }
     );
   }
 

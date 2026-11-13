@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { formatCurrency } from "@/lib/utils";
+import { ConfirmModal } from "@/components/ui/ConfirmModal";
 
 export function ConfiguracionCuotaCard({ montoActual }: { montoActual: number }) {
   const router = useRouter();
@@ -11,6 +12,7 @@ export function ConfiguracionCuotaCard({ montoActual }: { montoActual: number })
   const [guardando, setGuardando] = useState(false);
   const [generando, setGenerando] = useState<"mensual" | "anual" | null>(null);
   const [mensaje, setMensaje] = useState<string | null>(null);
+  const [confirmandoAnual, setConfirmandoAnual] = useState(false);
 
   async function guardarMonto() {
     setGuardando(true);
@@ -45,27 +47,31 @@ export function ConfiguracionCuotaCard({ montoActual }: { montoActual: number })
     router.refresh();
   }
 
-
-async function generarCuotaAnual() {
-    if (!confirm("¿Generar la cuota anual (12 meses) para todos los socios activos que todavía no la tengan?")) return;
+  async function generarCuotaAnual() {
     setGenerando("anual");
     setMensaje(null);
-    const res = await fetch("/api/cuotas/generar-anual", { method: "POST" });
-    setGenerando(null);
+    try {
+      const res = await fetch("/api/cuotas/generar-anual", { method: "POST" });
+      setGenerando(null);
+      setConfirmandoAnual(false);
 
-    if (!res.ok) {
-      setMensaje("No se pudo generar la cuota anual.");
-      return;
+      if (!res.ok) {
+        setMensaje("No se pudo generar la cuota anual.");
+        return;
+      }
+      const data = await res.json();
+      setMensaje(
+        data.generadas > 0
+          ? `Se generó la cuota anual (${data.periodo}) para ${data.generadas} socio(s).`
+          : `Todos los socios activos ya tenían generada la cuota anual.`
+      );
+      router.refresh();
+    } catch {
+      setGenerando(null);
+      setConfirmandoAnual(false);
+      setMensaje("Error al intentar generar la cuota anual.");
     }
-    const data = await res.json();
-    setMensaje(
-      data.generadas > 0
-        ? `Se generó la cuota anual (${data.periodo}) para ${data.generadas} socio(s).`
-        : `Todos los socios activos ya tenían generada la cuota anual.`
-    );
-    router.refresh();
   }
-
 
   return (
     <div className="card">
@@ -100,11 +106,23 @@ async function generarCuotaAnual() {
       <button className="btn-secondary w-full" disabled={generando !== null} onClick={generarCuotaMensual}>
         {generando === "mensual" ? "Generando..." : "Generar cuota del mes para socios activos"}
       </button>
-      <button className="btn-secondary mt-2 w-full" disabled={generando !== null} onClick={generarCuotaAnual}>
+      <button className="btn-secondary mt-2 w-full" disabled={generando !== null} onClick={() => setConfirmandoAnual(true)}>
         {generando === "anual" ? "Generando..." : "Generar cuota anual (12 meses) para socios activos"}
       </button>
 
       {mensaje && <p className="mt-2 text-xs text-gray-500">{mensaje}</p>}
+
+      <ConfirmModal
+        open={confirmandoAnual}
+        title="¿Confirmar generación de cuota anual?"
+        description="Se generará la cuota anual (12 meses) para todos los socios activos que todavía no la tengan emitida."
+        confirmLabel={generando === "anual" ? "Generando..." : "Sí, generar cuota anual"}
+        loading={generando === "anual"}
+        onConfirm={generarCuotaAnual}
+        onCancel={() => {
+          if (generando !== "anual") setConfirmandoAnual(false);
+        }}
+      />
     </div>
   );
 }

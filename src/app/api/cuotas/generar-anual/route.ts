@@ -48,7 +48,7 @@ export async function POST() {
 const cuotasExistentesDesdeEsteMes = await prisma.cuota.findMany({
     where: {
       socioId: { in: candidatos },
-      concepto: { not: { startsWith: "Cuota Anual" } },
+      concepto: "Cuota Social",
       fechaVencimiento: { gte: inicioMesActual, lte: finAnio },
     },
     select: { socioId: true },

@@ -107,9 +107,12 @@ export async function PATCH(request: NextRequest, { params }: { params: { id: st
           fechaVencimiento.setMonth(fechaVencimiento.getMonth() + i);
           fechaVencimiento.setDate(10); // Vence los 10 de cada mes
           
+          const mesNombre = fechaVencimiento.toLocaleString("es-AR", { month: "long" });
+          const mesCapitalizado = mesNombre.charAt(0).toUpperCase() + mesNombre.slice(1);
+          
           cuotasParaCrear.push({
             socioId: socioActual.id,
-            periodo: `${fechaVencimiento.toLocaleString('es-AR', { month: 'long' })} ${fechaVencimiento.getFullYear()}`,
+            periodo: `${mesCapitalizado} ${fechaVencimiento.getFullYear()}`,
             concepto: socioActual.cuotasCapital === 1 ? "Cuota Inicial" : `Cuota Inicial ${i}/${socioActual.cuotasCapital}`,
             monto: montoPorCuota,
             fechaVencimiento,
