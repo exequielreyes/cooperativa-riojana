@@ -3,6 +3,7 @@ import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/db";
 import { z } from "zod";
+import bcrypt from "bcryptjs";
 
 const editarPerfilSchema = z.object({
   nombre: z.string().min(1),
@@ -10,6 +11,8 @@ const editarPerfilSchema = z.object({
   telefono: z.string().optional(),
   fechaNacimiento: z.string().nullable().optional(),
   email: z.string().email().optional(),
+  // Obligatoria solo si cambia el email (es el usuario de login y de recuperación)
+  passwordActual: z.string().optional(),
 });
 
 export async function PATCH(request: NextRequest) {
@@ -42,13 +45,30 @@ export async function PATCH(request: NextRequest) {
       return NextResponse.json({ error: "El correo electrónico ya está en uso." }, { status: 400 });
     }
 
+    const usuario = await prisma.usuario.findUnique({ where: { id: socioActual.usuarioId } });
+    const passwordValida =
+      !!usuario &&
+      !!parsed.data.passwordActual &&
+      (await bcrypt.compare(parsed.data.passwordActual, usuario.passwordHash));
+    if (!passwordValida) {
+      return NextResponse.json(
+        { error: "Para cambiar el correo electrónico ingresá tu contraseña actual." },
+        { status: 400 }
+      );
+    }
+
     await prisma.usuario.update({
       where: { id: socioActual.usuarioId },
       data: { email: parsed.data.email },
     });
+    // Los links de recuperación pedidos con el email anterior dejan de servir
+    await prisma.passwordResetToken.updateMany({
+      where: { usuarioId: socioActual.usuarioId, usedAt: null },
+      data: { usedAt: new Date() },
+    });
   }
 
-  const dataToUpdate: any = { ...parsed.data };
+  const { passwordActual: _, ...dataToUpdate }: any = parsed.data;
   if (dataToUpdate.fechaNacimiento) {
     dataToUpdate.fechaNacimiento = new Date(dataToUpdate.fechaNacimiento);
   }
