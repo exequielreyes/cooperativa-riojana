@@ -34,6 +34,12 @@ export default async function PerfilSocioAdminPage({ params }: { params: { id: s
   if (!socio) notFound();
 
   const cuotasPendientes = socio.cuotas.filter((c) => c.estado !== "PAGADO");
+  const cuotasPendientesOrdenadas = [...cuotasPendientes].sort((a, b) => {
+    const diff = new Date(a.fechaVencimiento).getTime() - new Date(b.fechaVencimiento).getTime();
+    if (diff !== 0) return diff;
+    return new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime();
+  });
+  const primeraPendiente = cuotasPendientesOrdenadas[0];
   const deudaTotal = cuotasPendientes.reduce((acc, c) => acc + Number(c.monto), 0);
 
   let nuevoTitular: {
@@ -296,7 +302,14 @@ export default async function PerfilSocioAdminPage({ params }: { params: { id: s
                           "px-5 py-4 font-medium",
                           esVencida ? "text-status-danger font-bold" : esPorVencer ? "text-amber-800 font-bold" : "text-gray-900"
                         )}>
-                          {cuota.periodo}
+                          <div className="flex items-center gap-2 flex-wrap">
+                            <span>{cuota.periodo}</span>
+                            {cuota.concepto && cuota.concepto !== "Cuota Social" && (
+                              <span className="inline-flex items-center rounded-md bg-blue-50 px-2 py-0.5 text-xs font-semibold text-blue-700 border border-blue-200">
+                                {cuota.concepto}
+                              </span>
+                            )}
+                          </div>
                         </td>
                         <td className="px-5 py-4">
                           <div className="flex flex-wrap items-center gap-2">
@@ -331,7 +344,15 @@ export default async function PerfilSocioAdminPage({ params }: { params: { id: s
                           {enRevision ? (
                               <StatusBadge label="En revisión" tone="warning" />
                             ) : (
-                              <MarcarPagadoEfectivo cuotaId={cuota.id} />
+                              <MarcarPagadoEfectivo
+                                cuotaId={cuota.id}
+                                disabled={primeraPendiente ? cuota.id !== primeraPendiente.id : false}
+                                motivoDisabled={
+                                  primeraPendiente && cuota.id !== primeraPendiente.id
+                                    ? `Debe registrar primero el pago de la cuota anterior (${primeraPendiente.concepto !== "Cuota Social" ? `${primeraPendiente.concepto} · ` : ""}${primeraPendiente.periodo})`
+                                    : undefined
+                                }
+                              />
                             )}
                         </td>
                       </tr>

@@ -511,65 +511,96 @@ export function CobradorDashboard({
                           </div>
                         ) : (
                           <div className="space-y-2">
-                            {socio.cuotasPendientes.map((cuota) => {
-                              const fv = new Date(cuota.fechaVencimiento);
-                              const hoy = new Date();
-                              const fvMidnight = new Date(fv.getFullYear(), fv.getMonth(), fv.getDate()).getTime();
-                              const hoyMidnight = new Date(hoy.getFullYear(), hoy.getMonth(), hoy.getDate()).getTime();
-                              const diffDays = Math.round((fvMidnight - hoyMidnight) / (1000 * 60 * 60 * 24));
+                            {(() => {
+                              const cuotasOrdenadas = [...socio.cuotasPendientes].sort((a, b) => {
+                                const diff = new Date(a.fechaVencimiento).getTime() - new Date(b.fechaVencimiento).getTime();
+                                if (diff !== 0) return diff;
+                                return a.id.localeCompare(b.id);
+                              });
+                              const primeraPendiente = cuotasOrdenadas[0];
 
-                              const esVencida = cuota.estado === "VENCIDO" || diffDays < 0;
-                              const esPorVencer = !esVencida && diffDays <= 3;
+                              return socio.cuotasPendientes.map((cuota) => {
+                                const fv = new Date(cuota.fechaVencimiento);
+                                const hoy = new Date();
+                                const fvMidnight = new Date(fv.getFullYear(), fv.getMonth(), fv.getDate()).getTime();
+                                const hoyMidnight = new Date(hoy.getFullYear(), hoy.getMonth(), hoy.getDate()).getTime();
+                                const diffDays = Math.round((fvMidnight - hoyMidnight) / (1000 * 60 * 60 * 24));
 
-                              return (
-                              <div
-                                key={cuota.id}
-                                className={`flex items-center justify-between gap-2 rounded-xl border p-2.5 transition ${
-                                  esVencida
-                                    ? "border-red-200 bg-red-50/40 hover:bg-red-50"
-                                    : esPorVencer
-                                    ? "border-amber-200 bg-amber-50/40 hover:bg-amber-50"
-                                    : "border-gray-200 bg-gray-50/40 hover:bg-gray-100/50"
-                                }`}
-                              >
-                                <div>
-                                  <div className="flex items-center gap-1.5">
-                                    <p className={`text-xs font-bold ${
-                                      esVencida ? "text-red-900" : esPorVencer ? "text-amber-900" : "text-gray-900"
-                                    }`}>
-                                      {cuota.periodo}
-                                    </p>
-                                    {esVencida && (
-                                      <span className="rounded bg-red-100 px-1.5 py-0.5 text-[10px] font-bold text-status-danger">
-                                        Vencida
-                                      </span>
-                                    )}
-                                    {esPorVencer && (
-                                      <span className="rounded bg-amber-100 px-1.5 py-0.5 text-[10px] font-bold text-amber-800">
-                                        {diffDays === 0 ? "Vence hoy" : `Por vencer (${diffDays}d)`}
-                                      </span>
-                                    )}
-                                  </div>
-                                  <p className={`text-[11px] font-semibold ${
-                                    esVencida ? "text-status-danger" : esPorVencer ? "text-amber-700" : "text-gray-700"
-                                  }`}>
-                                    {formatCurrency(Number(cuota.monto))}
-                                  </p>
-                                  <p className="text-[10px] text-gray-500">
-                                    Vence: {formatDate(cuota.fechaVencimiento)}
-                                  </p>
-                                </div>
-                                <button
-                                  type="button"
-                                  onClick={() => setCuotaParaCobrar({ cuota, socio })}
-                                  className="inline-flex items-center gap-1.5 rounded-lg bg-emerald-700 px-3 py-1.5 text-xs font-bold text-white shadow transition hover:bg-emerald-800"
+                                const esVencida = cuota.estado === "VENCIDO" || diffDays < 0;
+                                const esPorVencer = !esVencida && diffDays <= 3;
+                                const esLaPrimera = primeraPendiente ? cuota.id === primeraPendiente.id : false;
+                                const motivoDisabled = !esLaPrimera && primeraPendiente
+                                  ? `Debe cobrar primero la cuota anterior (${primeraPendiente.concepto !== "Cuota Social" ? `${primeraPendiente.concepto} · ` : ""}${primeraPendiente.periodo})`
+                                  : undefined;
+
+                                return (
+                                <div
+                                  key={cuota.id}
+                                  className={`flex items-center justify-between gap-2 rounded-xl border p-2.5 transition ${
+                                    esVencida
+                                      ? "border-red-200 bg-red-50/40 hover:bg-red-50"
+                                      : esPorVencer
+                                      ? "border-amber-200 bg-amber-50/40 hover:bg-amber-50"
+                                      : "border-gray-200 bg-gray-50/40 hover:bg-gray-100/50"
+                                  }`}
                                 >
-                                  <DollarSign size={13} />
-                                  Cobrar Efectivo
-                                </button>
-                              </div>
-                              );
-                            })}
+                                  <div>
+                                    <div className="flex items-center gap-1.5 flex-wrap">
+                                      <p className={`text-xs font-bold ${
+                                        esVencida ? "text-red-900" : esPorVencer ? "text-amber-900" : "text-gray-900"
+                                      }`}>
+                                        {cuota.periodo}
+                                      </p>
+                                      {cuota.concepto && cuota.concepto !== "Cuota Social" && (
+                                        <span className="rounded bg-blue-100 px-1.5 py-0.5 text-[10px] font-bold text-blue-800">
+                                          {cuota.concepto}
+                                        </span>
+                                      )}
+                                      {esVencida && (
+                                        <span className="rounded bg-red-100 px-1.5 py-0.5 text-[10px] font-bold text-status-danger">
+                                          Vencida
+                                        </span>
+                                      )}
+                                      {esPorVencer && (
+                                        <span className="rounded bg-amber-100 px-1.5 py-0.5 text-[10px] font-bold text-amber-800">
+                                          {diffDays === 0 ? "Vence hoy" : `Por vencer (${diffDays}d)`}
+                                        </span>
+                                      )}
+                                    </div>
+                                    <p className={`text-[11px] font-semibold ${
+                                      esVencida ? "text-status-danger" : esPorVencer ? "text-amber-700" : "text-gray-700"
+                                    }`}>
+                                      {formatCurrency(Number(cuota.monto))}
+                                    </p>
+                                    <p className="text-[10px] text-gray-500">
+                                      Vence: {formatDate(cuota.fechaVencimiento)}
+                                    </p>
+                                  </div>
+                                  {esLaPrimera ? (
+                                    <button
+                                      type="button"
+                                      onClick={() => setCuotaParaCobrar({ cuota, socio })}
+                                      className="inline-flex items-center gap-1.5 rounded-lg bg-emerald-700 px-3 py-1.5 text-xs font-bold text-white shadow transition hover:bg-emerald-800"
+                                    >
+                                      <DollarSign size={13} />
+                                      Cobrar Efectivo
+                                    </button>
+                                  ) : (
+                                    <span title={motivoDisabled} className="inline-block">
+                                      <button
+                                        type="button"
+                                        disabled
+                                        className="inline-flex items-center gap-1.5 rounded-lg bg-gray-100 border border-gray-200 px-3 py-1.5 text-xs font-semibold text-gray-400 cursor-not-allowed shadow-none"
+                                      >
+                                        <DollarSign size={13} />
+                                        Cobrar Efectivo
+                                      </button>
+                                    </span>
+                                  )}
+                                </div>
+                                );
+                              });
+                            })()}
                           </div>
                         )}
                       </div>

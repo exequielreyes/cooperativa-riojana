@@ -120,9 +120,12 @@ export async function POST(request: NextRequest) {
         fechaVencimiento.setMonth(fechaVencimiento.getMonth() + i);
         fechaVencimiento.setDate(10); // Vence los 10 de cada mes
 
+        const mesNombre = fechaVencimiento.toLocaleString("es-AR", { month: "long" });
+        const mesCapitalizado = mesNombre.charAt(0).toUpperCase() + mesNombre.slice(1);
+
         cuotasParaCrear.push({
           socioId: usuario.socio!.id,
-          periodo: `${fechaVencimiento.toLocaleString("es-AR", { month: "long" })} ${fechaVencimiento.getFullYear()}`,
+          periodo: `${mesCapitalizado} ${fechaVencimiento.getFullYear()}`,
           concepto: data.cuotasCapital === 1 ? "Cuota Inicial" : `Cuota Inicial ${i}/${data.cuotasCapital}`,
           monto: montoPorCuota,
           fechaVencimiento,

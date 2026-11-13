@@ -29,20 +29,45 @@ export async function POST() {
     select: { id: true },
   });
 
-  // Evitamos duplicar: sólo generamos para socios que todavía no tengan
-  // una cuota con este mismo período.
-  const yaGeneradas = await prisma.cuota.findMany({
-    where: { periodo, socioId: { in: sociosActivos.map((s) => s.id) } },
+  const idsSociosActivos = sociosActivos.map((s) => s.id);
+
+  // Socios que ya tienen una Cuota Anual para este año
+  const yaTienenAnual = await prisma.cuota.findMany({
+    where: {
+      socioId: { in: idsSociosActivos },
+      periodo: `Año ${hoy.getFullYear()}`,
+      concepto: { startsWith: "Cuota Anual" },
+    },
     select: { socioId: true },
   });
-  const idsConCuota = new Set(yaGeneradas.map((c) => c.socioId));
-  const pendientes = sociosActivos.filter((s) => !idsConCuota.has(s.id));
+  const idsConAnual = new Set(yaTienenAnual.map((c) => c.socioId));
+
+  // Evitamos duplicar: sólo buscamos cuotas con concepto "Cuota Social"
+  // para este mismo período.
+  // Las cuotas iniciales / de capital son independientes y NO impiden
+  // la generación de la cuota social mensual.
+  const yaGeneradas = await prisma.cuota.findMany({
+    where: {
+      concepto: "Cuota Social",
+      socioId: { in: idsSociosActivos },
+      OR: [
+        { periodo },
+        { periodo: periodo.toLowerCase() },
+      ],
+    },
+    select: { socioId: true },
+  });
+  const idsConCuotaSocial = new Set(yaGeneradas.map((c) => c.socioId));
+
+  const idsExcluidos = new Set([...idsConCuotaSocial, ...idsConAnual]);
+  const pendientes = sociosActivos.filter((s) => !idsExcluidos.has(s.id));
 
   if (pendientes.length > 0) {
     await prisma.cuota.createMany({
       data: pendientes.map((s) => ({
         socioId: s.id,
         periodo,
+        concepto: "Cuota Social",
         monto: configuracion.montoCuotaActual,
         fechaVencimiento,
         estado: "PENDIENTE",
