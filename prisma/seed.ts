@@ -4,6 +4,10 @@ import bcrypt from "bcryptjs";
 const prisma = new PrismaClient();
 
 async function main() {
+  // Usuarios de prueba con contraseña conocida: nunca contra la base de producción
+  if (process.env.NODE_ENV === "production") {
+    throw new Error("El seed crea usuarios con contraseña pública; no se corre con NODE_ENV=production.");
+  }
   const passwordHash = await bcrypt.hash("cambiar123", 10);
 
   // --- Usuario admin ---
