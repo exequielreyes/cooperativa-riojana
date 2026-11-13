@@ -21,6 +21,7 @@ export async function POST() {
   });
 
   const hoy = new Date();
+  const mesActualStart = new Date(hoy.getFullYear(), hoy.getMonth(), 1);
   const periodo = `${MESES[hoy.getMonth()]} ${hoy.getFullYear()}`;
   const fechaVencimiento = new Date(hoy.getFullYear(), hoy.getMonth(), 10);
 
@@ -31,21 +32,42 @@ export async function POST() {
 
   const idsSociosActivos = sociosActivos.map((s) => s.id);
 
-  // Socios que ya tienen una Cuota Anual para este año
-  const yaTienenAnual = await prisma.cuota.findMany({
+  // Socios que tienen una Cuota Anual PAGADA cuyos 12 meses aún no se han cumplido
+  const cuotasAnualesPagadas = await prisma.cuota.findMany({
     where: {
       socioId: { in: idsSociosActivos },
-      periodo: `Año ${hoy.getFullYear()}`,
       concepto: { startsWith: "Cuota Anual" },
+      estado: "PAGADO",
     },
-    select: { socioId: true },
+    include: {
+      pagos: {
+        where: { estadoValidacion: "APROBADO" },
+        orderBy: { fechaPago: "desc" },
+        take: 1,
+      },
+    },
   });
-  const idsConAnual = new Set(yaTienenAnual.map((c) => c.socioId));
+
+  const idsConAnualVigente = new Set<string>();
+  for (const c of cuotasAnualesPagadas) {
+    // Tomamos la fecha en que se emitió/pagó la cuota anual y calculamos 12 meses calendarios
+    const fechaReferencia = c.pagos[0]?.fechaPago
+      ? new Date(c.pagos[0].fechaPago)
+      : new Date(c.createdAt);
+    const finCobertura = new Date(
+      fechaReferencia.getFullYear(),
+      fechaReferencia.getMonth() + 12,
+      1
+    );
+
+    // Mientras no se hayan cumplido los 12 meses, no se le genera la cuota mensual
+    if (mesActualStart < finCobertura) {
+      idsConAnualVigente.add(c.socioId);
+    }
+  }
 
   // Evitamos duplicar: sólo buscamos cuotas con concepto "Cuota Social"
   // para este mismo período.
-  // Las cuotas iniciales / de capital son independientes y NO impiden
-  // la generación de la cuota social mensual.
   const yaGeneradas = await prisma.cuota.findMany({
     where: {
       concepto: "Cuota Social",
@@ -59,7 +81,7 @@ export async function POST() {
   });
   const idsConCuotaSocial = new Set(yaGeneradas.map((c) => c.socioId));
 
-  const idsExcluidos = new Set([...idsConCuotaSocial, ...idsConAnual]);
+  const idsExcluidos = new Set([...idsConCuotaSocial, ...idsConAnualVigente]);
   const pendientes = sociosActivos.filter((s) => !idsExcluidos.has(s.id));
 
   if (pendientes.length > 0) {
