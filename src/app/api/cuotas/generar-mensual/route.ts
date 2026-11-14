@@ -21,9 +21,11 @@ export async function POST() {
   });
 
   const hoy = new Date();
-  const mesActualStart = new Date(hoy.getFullYear(), hoy.getMonth(), 1);
-  const periodo = `${MESES[hoy.getMonth()]} ${hoy.getFullYear()}`;
-  const fechaVencimiento = new Date(hoy.getFullYear(), hoy.getMonth(), 10);
+  const anioActual = hoy.getFullYear();
+  const inicioAnio = new Date(anioActual, 0, 1);
+  const finAnio = new Date(anioActual, 11, 31, 23, 59, 59);
+  const periodo = `${MESES[hoy.getMonth()]} ${anioActual}`;
+  const fechaVencimiento = new Date(anioActual, hoy.getMonth(), 10);
 
   const sociosActivos = await prisma.socio.findMany({
     where: { estado: "ACTIVO" },
@@ -32,39 +34,19 @@ export async function POST() {
 
   const idsSociosActivos = sociosActivos.map((s) => s.id);
 
-  // Socios que tienen una Cuota Anual PAGADA cuyos 12 meses aún no se han cumplido
-  const cuotasAnualesPagadas = await prisma.cuota.findMany({
+  // Socios que ya tienen empleada/generada una Cuota Anual para completar este año
+  const yaTienenAnual = await prisma.cuota.findMany({
     where: {
       socioId: { in: idsSociosActivos },
       concepto: { startsWith: "Cuota Anual" },
-      estado: "PAGADO",
+      OR: [
+        { periodo: `Año ${anioActual}` },
+        { createdAt: { gte: inicioAnio, lte: finAnio } },
+      ],
     },
-    include: {
-      pagos: {
-        where: { estadoValidacion: "APROBADO" },
-        orderBy: { fechaPago: "desc" },
-        take: 1,
-      },
-    },
+    select: { socioId: true },
   });
-
-  const idsConAnualVigente = new Set<string>();
-  for (const c of cuotasAnualesPagadas) {
-    // Tomamos la fecha en que se emitió/pagó la cuota anual y calculamos 12 meses calendarios
-    const fechaReferencia = c.pagos[0]?.fechaPago
-      ? new Date(c.pagos[0].fechaPago)
-      : new Date(c.createdAt);
-    const finCobertura = new Date(
-      fechaReferencia.getFullYear(),
-      fechaReferencia.getMonth() + 12,
-      1
-    );
-
-    // Mientras no se hayan cumplido los 12 meses, no se le genera la cuota mensual
-    if (mesActualStart < finCobertura) {
-      idsConAnualVigente.add(c.socioId);
-    }
-  }
+  const idsConAnual = new Set(yaTienenAnual.map((c) => c.socioId));
 
   // Evitamos duplicar: sólo buscamos cuotas con concepto "Cuota Social"
   // para este mismo período.
@@ -81,7 +63,7 @@ export async function POST() {
   });
   const idsConCuotaSocial = new Set(yaGeneradas.map((c) => c.socioId));
 
-  const idsExcluidos = new Set([...idsConCuotaSocial, ...idsConAnualVigente]);
+  const idsExcluidos = new Set([...idsConCuotaSocial, ...idsConAnual]);
   const pendientes = sociosActivos.filter((s) => !idsExcluidos.has(s.id));
 
   if (pendientes.length > 0) {
