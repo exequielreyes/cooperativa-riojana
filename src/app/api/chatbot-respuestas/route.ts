@@ -3,6 +3,7 @@ import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/db";
 import { z } from "zod";
+import { esLinkSeguro } from "@/lib/links";
 
 export async function GET() {
   try {
@@ -22,7 +23,12 @@ const crearSchema = z.object({
   palabrasClave: z.string().min(1, "Las palabras clave son requeridas"),
   respuesta: z.string().min(1, "La respuesta es requerida"),
   // Link opcional al que puede ir el socio desde la respuesta (ej: /talleres)
-  link: z.string().trim().optional().nullable(),
+  link: z
+    .string()
+    .trim()
+    .refine((v) => v === "" || esLinkSeguro(v, true), "El link tiene que empezar con / o con https://")
+    .optional()
+    .nullable(),
   linkTexto: z.string().trim().optional().nullable(),
   orden: z.coerce.number().int().default(0),
 });

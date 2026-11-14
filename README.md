@@ -40,6 +40,8 @@ La app queda en `http://localhost:3000`.
 
 ### Credenciales de prueba (después de `npm run db:seed`)
 
+> Solo para desarrollo local. El seed no corre con `NODE_ENV=production`. Si alguna vez se corrió contra la base de producción, cambiá la contraseña de estos usuarios o desactivalos.
+
 | Rol   | Usuario                     | Contraseña  |
 |-------|------------------------------|-------------|
 | Admin | admin@cooperativa.com        | cambiar123  |

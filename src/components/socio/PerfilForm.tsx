@@ -22,6 +22,8 @@ export function PerfilForm({ socio }: { socio: Perfil }) {
   const [mensaje, setMensaje] = useState<string | null>(null);
   const [subiendoFoto, setSubiendoFoto] = useState(false);
   const [fotoUrl, setFotoUrl] = useState(socio.fotoUrl);
+  const [email, setEmail] = useState(socio.email);
+  const emailCambia = email.trim().toLowerCase() !== socio.email.trim().toLowerCase();
 
   async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
@@ -37,6 +39,7 @@ export function PerfilForm({ socio }: { socio: Perfil }) {
         apellido: formData.get("apellido"),
         telefono: formData.get("telefono"),
         email: formData.get("email"),
+        passwordActual: emailCambia ? formData.get("passwordActual") : undefined,
         fechaNacimiento: formData.get("fechaNacimiento") ? new Date(formData.get("fechaNacimiento") as string).toISOString() : null,
       }),
     });
@@ -96,9 +99,19 @@ export function PerfilForm({ socio }: { socio: Perfil }) {
         <div className="grid gap-4 sm:grid-cols-2">
           <input className="input" name="nombre" defaultValue={socio.nombre} placeholder="Nombre" required />
           <input className="input" name="apellido" defaultValue={socio.apellido} placeholder="Apellido" required />
-          <input className="input" type="email" name="email" defaultValue={socio.email} placeholder="Correo Electrónico" required />
+          <input className="input" type="email" name="email" value={email} onChange={(e) => setEmail(e.target.value)} placeholder="Correo Electrónico" required />
           <input className="input" name="telefono" defaultValue={socio.telefono} placeholder="Teléfono" />
           <input className="input" type="date" name="fechaNacimiento" defaultValue={socio.fechaNacimiento} placeholder="Fecha de Nacimiento" />
+          {emailCambia && (
+            <input
+              className="input"
+              type="password"
+              name="passwordActual"
+              placeholder="Contraseña actual (para cambiar el correo)"
+              autoComplete="current-password"
+              required
+            />
+          )}
         </div>
       {mensaje && <p className="mt-3 text-sm text-gray-500">{mensaje}</p>}
       <button type="submit" className="btn-primary mt-4" disabled={enviando}>

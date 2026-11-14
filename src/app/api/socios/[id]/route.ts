@@ -148,6 +148,25 @@ export async function PATCH(request: NextRequest, { params }: { params: { id: st
     });
 
     if (familiar) {
+      // El nuevo titular necesita su propio email: si heredara el del titular anterior,
+      // quien controla esa casilla podría recuperar la contraseña de la cuenta.
+      if (
+        !familiar.email ||
+        familiar.email.trim() === "" ||
+        familiar.email.trim().toLowerCase() === socioActual.email.trim().toLowerCase()
+      ) {
+        return NextResponse.json(
+          { error: "Para transferir la titularidad, el familiar tiene que tener su propio email cargado (distinto del titular anterior)." },
+          { status: 400 }
+        );
+      }
+      const emailEnUso = await prisma.usuario.findFirst({
+        where: { email: familiar.email, id: { not: socioActual.usuarioId } },
+      });
+      if (emailEnUso) {
+        return NextResponse.json({ error: `El email ${familiar.email} ya pertenece a otro usuario.` }, { status: 400 });
+      }
+
       if (familiar.dni && familiar.dni.trim() !== "") {
         const dniColision = await prisma.socio.findFirst({
           where: { dni: familiar.dni, id: { not: socioActual.id } },
@@ -204,15 +223,33 @@ export async function PATCH(request: NextRequest, { params }: { params: { id: st
         },
       });
 
-      const nuevoEmail = familiar.email && familiar.email.trim() !== "" ? familiar.email : socioActual.email;
+      const nuevoEmail = familiar.email;
+      // Credencial nueva para el nuevo titular: la contraseña y los links de
+      // recuperación del titular anterior dejan de servir.
+      passwordTemporal = generarPasswordSegura(12);
       await prisma.usuario.update({
         where: { id: socioActual.usuarioId },
         data: {
           nombre: `${familiar.nombre} ${familiar.apellido}`,
           email: nuevoEmail,
           activo: true,
+          passwordHash: await bcrypt.hash(passwordTemporal, 10),
         },
       });
+      await prisma.passwordResetToken.updateMany({
+        where: { usuarioId: socioActual.usuarioId, usedAt: null },
+        data: { usedAt: new Date() },
+      });
+      try {
+        await enviarEmailCredenciales({
+          nombre: `${familiar.nombre} ${familiar.apellido}`,
+          email: nuevoEmail,
+          passwordTemporal,
+        });
+        emailEnviado = true;
+      } catch (error) {
+        console.error("No se pudo enviar el email de credenciales:", error);
+      }
 
       const socioActualizado = await prisma.socio.update({
         where: { id: socioActual.id },

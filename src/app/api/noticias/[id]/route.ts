@@ -19,6 +19,14 @@ export async function GET(_req: NextRequest, { params }: { params: { id: string 
     include: { redesSociales: true },
   });
   if (!noticia) return NextResponse.json({ error: "No encontrada" }, { status: 404 });
+  // Los borradores solo los ven quienes editan contenido
+  if (noticia.estado !== "PUBLICADO") {
+    const session = await getServerSession(authOptions);
+    const rol = session?.user.rol;
+    if (rol !== "SUPER_ADMIN" && rol !== "EDITOR_CONTENIDOS") {
+      return NextResponse.json({ error: "No encontrada" }, { status: 404 });
+    }
+  }
   return NextResponse.json(noticia);
 }
 

@@ -12,7 +12,13 @@ import { cookies } from "next/headers";
 
 export default async function AdminLayout({ children }: { children: React.ReactNode }) {
   const session = await getServerSession(authOptions);
-  if (!session || session.user.rol === "SOCIO") redirect("/login");
+  if (!session) redirect("/login");
+  // Mismo criterio que el middleware, repetido acá por si el middleware no corre
+  // (por ejemplo, con el bypass de x-middleware-subrequest de Next < 14.2.25).
+  const rol = session.user.rol;
+  if (rol !== "SUPER_ADMIN" && rol !== "EDITOR_CONTENIDOS") {
+    redirect(rol === "PROFESOR" ? "/profesor" : rol === "COBRADOR" ? "/cobrador" : "/portal");
+  }
 
   const usuario = await prisma.usuario.findUnique({ where: { id: session.user.id } });
   if (!usuario?.activo) redirect("/login");
