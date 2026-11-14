@@ -12,6 +12,7 @@ interface SocioCandidato {
   dni: string;
   idCooperativa: string;
   tieneAnualVigente: boolean;
+  mesesRestantes: number;
 }
 
 export function ConfiguracionCuotaCard({ montoActual }: { montoActual: number }) {
@@ -115,7 +116,7 @@ export function ConfiguracionCuotaCard({ montoActual }: { montoActual: number })
 
       cerrarModalAnual();
       setMensaje(
-        `Se generó la cuota anual (${data.periodo}) por ${formatCurrency(montoActual * 12)} para ${data.socio}.`
+        `Se generó la cuota anual (${data.mesesRestantes} ${data.mesesRestantes === 1 ? "mes restante" : "meses restantes"} - ${data.periodo}) por ${formatCurrency(data.montoTotal)} para ${data.socio}.`
       );
       router.refresh();
     } catch {
@@ -124,7 +125,8 @@ export function ConfiguracionCuotaCard({ montoActual }: { montoActual: number })
     }
   }
 
-  const montoTotalAnual = montoActual * 12;
+  const mesesACobrar = socioSeleccionado?.mesesRestantes ?? 12;
+  const montoTotalAnual = montoActual * mesesACobrar;
 
   return (
     <div className="card">
@@ -176,7 +178,7 @@ export function ConfiguracionCuotaCard({ montoActual }: { montoActual: number })
         >
           <div className="card w-full max-w-md" onClick={(e) => e.stopPropagation()}>
             <div className="mb-4 flex items-center justify-between">
-              <p className="font-medium text-primary-dark">Generar Cuota Anual (12 meses)</p>
+              <p className="font-medium text-primary-dark">Generar Cuota Anual</p>
               <button
                 type="button"
                 className="text-gray-400 hover:text-primary-dark"
@@ -233,10 +235,12 @@ export function ConfiguracionCuotaCard({ montoActual }: { montoActual: number })
                         </div>
                         {socio.tieneAnualVigente ? (
                           <span className="text-xs font-medium text-amber-600">
-                            Ya tiene cuota anual
+                            Año completo / Ya tiene anual
                           </span>
                         ) : (
-                          <span className="text-xs text-primary font-medium">Seleccionar</span>
+                          <span className="text-xs text-primary font-medium">
+                            Seleccionar ({socio.mesesRestantes} {socio.mesesRestantes === 1 ? "mes" : "meses"})
+                          </span>
                         )}
                       </button>
                     ))}
@@ -264,11 +268,16 @@ export function ConfiguracionCuotaCard({ montoActual }: { montoActual: number })
 
                 <div className="mb-4 rounded-lg bg-surface-muted p-3 text-sm text-gray-700 space-y-1">
                   <p>
-                    Se generará una única <strong>Cuota Anual (12 meses)</strong> por un total de{" "}
-                    <strong>{formatCurrency(montoTotalAnual)}</strong> (12 × {formatCurrency(montoActual)}).
+                    Se generará la cuota anual por los{" "}
+                    <strong>
+                      {mesesACobrar} {mesesACobrar === 1 ? "mes restante" : "meses restantes"}
+                    </strong>{" "}
+                    para completar el año, por un total de{" "}
+                    <strong>{formatCurrency(montoTotalAnual)}</strong> ({mesesACobrar} ×{" "}
+                    {formatCurrency(montoActual)}).
                   </p>
                   <p className="text-xs text-gray-500">
-                    Una vez abonada, no se le generará la cuota mensual durante los 12 meses de vigencia.
+                    Al emplearse esta cuota anual, no se le volverá a generar la cuota del mes a este socio durante el resto del año.
                   </p>
                 </div>
 

@@ -4,11 +4,6 @@ import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/db";
 import { cookies } from "next/headers";
 
-const MESES = [
-  "Enero", "Febrero", "Marzo", "Abril", "Mayo", "Junio",
-  "Julio", "Agosto", "Septiembre", "Octubre", "Noviembre", "Diciembre",
-];
-
 // Buscador de socios activos para generar cuota anual
 export async function GET(request: NextRequest) {
   const session = await getServerSession(authOptions);
@@ -20,6 +15,15 @@ export async function GET(request: NextRequest) {
   if (q.length < 2) return NextResponse.json([]);
 
   const currentArea = cookies().get("coop_area")?.value || "SEPELIO";
+
+  const hoy = new Date();
+  const anioActual = hoy.getFullYear();
+  const mesActualIndex = hoy.getMonth();
+  // Contempla desde el mes actual inclusive hasta diciembre (ej: en noviembre 12 - 10 = 2 meses: noviembre y diciembre)
+  const totalMesesHastaFinDeAnio = 12 - mesActualIndex;
+  const inicioMesActual = new Date(anioActual, mesActualIndex, 1);
+  const finAnio = new Date(anioActual, 11, 31, 23, 59, 59);
+  const periodoAnual = `Año ${anioActual}`;
 
   const socios = await prisma.socio.findMany({
     where: {
@@ -34,32 +38,35 @@ export async function GET(request: NextRequest) {
     },
     include: {
       cuotas: {
-        where: { concepto: { startsWith: "Cuota Anual" } },
+        where: {
+          OR: [
+            { concepto: { startsWith: "Cuota Anual" } },
+            {
+              concepto: "Cuota Social",
+              estado: "PAGADO",
+              fechaVencimiento: { gte: inicioMesActual, lte: finAnio },
+            },
+          ],
+        },
         orderBy: { createdAt: "desc" },
-        take: 1,
       },
     },
     take: 8,
   });
 
-  const hoy = new Date();
-  const mesActualStart = new Date(hoy.getFullYear(), hoy.getMonth(), 1);
-
   const resultado = socios.map((s) => {
-    const ultimaAnual = s.cuotas[0];
-    let tieneAnualVigente = false;
+    const tieneAnualEsteAnio = s.cuotas.some(
+      (c) =>
+        c.concepto.startsWith("Cuota Anual") &&
+        (c.periodo === periodoAnual || new Date(c.createdAt).getFullYear() === anioActual)
+    );
 
-    if (ultimaAnual) {
-      if (ultimaAnual.estado === "PENDIENTE" || ultimaAnual.estado === "VENCIDO") {
-        tieneAnualVigente = true;
-      } else if (ultimaAnual.estado === "PAGADO") {
-        const fechaBase = new Date(ultimaAnual.createdAt);
-        const finCobertura = new Date(fechaBase.getFullYear(), fechaBase.getMonth() + 12, 1);
-        if (mesActualStart < finCobertura) {
-          tieneAnualVigente = true;
-        }
-      }
-    }
+    const cuotasMensualesPagadas = s.cuotas.filter(
+      (c) => c.concepto === "Cuota Social" && c.estado === "PAGADO"
+    ).length;
+
+    const mesesRestantes = Math.max(0, totalMesesHastaFinDeAnio - cuotasMensualesPagadas);
+    const tieneAnualVigente = tieneAnualEsteAnio || mesesRestantes === 0;
 
     return {
       id: s.id,
@@ -68,6 +75,7 @@ export async function GET(request: NextRequest) {
       dni: s.dni,
       idCooperativa: s.idCooperativa,
       tieneAnualVigente,
+      mesesRestantes,
     };
   });
 
@@ -108,48 +116,85 @@ export async function POST(request: NextRequest) {
   });
 
   const hoy = new Date();
-  const mesActualStart = new Date(hoy.getFullYear(), hoy.getMonth(), 1);
+  const anioActual = hoy.getFullYear();
+  const mesActualIndex = hoy.getMonth();
 
-  // Verificar si ya tiene una cuota anual pendiente o una cuota anual pagada cuyos 12 meses aún no se cumplieron
-  const cuotasAnualesPrevias = await prisma.cuota.findMany({
+  // Incluye el mes actual hasta fin de año (ej. si estamos en enero son 12 meses, en noviembre son 2: nov y dic)
+  const totalMesesHastaFinDeAnio = 12 - mesActualIndex;
+  const inicioMesActual = new Date(anioActual, mesActualIndex, 1);
+  const finAnio = new Date(anioActual, 11, 31, 23, 59, 59);
+  const periodo = `Año ${anioActual}`;
+  const fechaVencimiento = new Date(anioActual, 11, 31);
+
+  // Verificar si ya tiene una cuota anual generada para este año
+  const yaTieneAnual = await prisma.cuota.findFirst({
     where: {
-      socioId,
+      socioId: socio.id,
       concepto: { startsWith: "Cuota Anual" },
+      OR: [
+        { periodo },
+        { createdAt: { gte: new Date(anioActual, 0, 1), lte: finAnio } },
+      ],
     },
-    orderBy: { createdAt: "desc" },
   });
 
-  for (const c of cuotasAnualesPrevias) {
-    if (c.estado === "PENDIENTE" || c.estado === "VENCIDO") {
-      return NextResponse.json(
-        { error: "Este socio ya tiene una cuota anual pendiente de pago." },
-        { status: 409 }
-      );
-    }
-    if (c.estado === "PAGADO") {
-      const fechaBase = new Date(c.createdAt);
-      const finCobertura = new Date(fechaBase.getFullYear(), fechaBase.getMonth() + 12, 1);
-      if (mesActualStart < finCobertura) {
-        return NextResponse.json(
-          { error: "Este socio ya cuenta con una cuota anual vigente (no se cumplieron los 12 meses)." },
-          { status: 409 }
-        );
-      }
-    }
+  if (yaTieneAnual) {
+    return NextResponse.json(
+      { error: `Este socio ya tiene generada la cuota anual para el ${periodo}.` },
+      { status: 409 }
+    );
   }
 
-  const mesInicio = `${MESES[hoy.getMonth()]} ${hoy.getFullYear()}`;
-  const fechaFin = new Date(hoy.getFullYear(), hoy.getMonth() + 11, 1);
-  const mesFin = `${MESES[fechaFin.getMonth()]} ${fechaFin.getFullYear()}`;
-  const periodo = `${mesInicio} - ${mesFin}`;
-  const fechaVencimiento = new Date(hoy.getFullYear(), hoy.getMonth(), 10);
-  const montoAnual = Number(configuracion.montoCuotaActual) * 12;
+  // Si ya se le había generado una cuota mensual PENDIENTE/VENCIDA del mes actual (sin pagos en revisión ni aprobados),
+  // la eliminamos para que la Cuota Anual contemple el mes actual sin cobrarle doble la cuota del mes.
+  const cuotasMensualesNoPagadasDesdeEsteMes = await prisma.cuota.findMany({
+    where: {
+      socioId: socio.id,
+      concepto: "Cuota Social",
+      estado: { in: ["PENDIENTE", "VENCIDO"] },
+      fechaVencimiento: { gte: inicioMesActual, lte: finAnio },
+      pagos: {
+        none: {
+          estadoValidacion: { in: ["PENDIENTE_REVISION", "APROBADO"] },
+        },
+      },
+    },
+    select: { id: true },
+  });
+
+  if (cuotasMensualesNoPagadasDesdeEsteMes.length > 0) {
+    await prisma.cuota.deleteMany({
+      where: {
+        id: { in: cuotasMensualesNoPagadasDesdeEsteMes.map((c) => c.id) },
+      },
+    });
+  }
+
+  // Contar sólo cuotas mensuales que ya hayan sido PAGADAS o estén en revisión desde este mes hasta fin de año
+  const cuotasYaCubiertasDesdeEsteMes = await prisma.cuota.count({
+    where: {
+      socioId: socio.id,
+      concepto: "Cuota Social",
+      fechaVencimiento: { gte: inicioMesActual, lte: finAnio },
+    },
+  });
+
+  const mesesRestantes = Math.max(0, totalMesesHastaFinDeAnio - cuotasYaCubiertasDesdeEsteMes);
+
+  if (mesesRestantes === 0) {
+    return NextResponse.json(
+      { error: "Este socio ya tiene todas las cuotas de este año cubiertas." },
+      { status: 409 }
+    );
+  }
+
+  const montoAnual = Number(configuracion.montoCuotaActual) * mesesRestantes;
 
   const cuota = await prisma.cuota.create({
     data: {
       socioId: socio.id,
       periodo,
-      concepto: "Cuota Anual (12 meses)",
+      concepto: `Cuota Anual (${mesesRestantes} ${mesesRestantes === 1 ? "mes" : "meses"} restantes)`,
       monto: montoAnual,
       fechaVencimiento,
       estado: "PENDIENTE",
@@ -159,6 +204,8 @@ export async function POST(request: NextRequest) {
   return NextResponse.json({
     generadas: 1,
     periodo,
+    mesesRestantes,
+    montoTotal: montoAnual,
     socio: `${socio.nombre} ${socio.apellido}`,
     cuota,
   });
