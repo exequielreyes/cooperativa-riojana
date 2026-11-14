@@ -17,8 +17,9 @@ const crearSocioSchema = z.object({
   fechaNacimiento: z.string().nullable().optional(),
   tipoMiembro: z.enum(["PRODUCTOR", "ADHERENTE", "HONORARIO"]).default("PRODUCTOR"),
   estado: z.enum(["ACTIVO", "PENDIENTE"]).default("PENDIENTE"),
-  cuotasCapital: z.coerce.number().min(1).default(1),
-  montoCapital: z.coerce.number().optional(),
+  // Mismo tope que los formularios (máximo 60 cuotas)
+  cuotasCapital: z.coerce.number().int().min(1).max(60).default(1),
+  montoCapital: z.coerce.number().positive().optional(),
   cuil: z.string().nullable().optional(),
   ocupacion: z.string().nullable().optional(),
   barrio: z.string().nullable().optional(),
@@ -56,6 +57,9 @@ export async function POST(request: NextRequest) {
   // Si la solicitud NO proviene de un SUPER_ADMIN autenticado, forzar siempre estado PENDIENTE
   if (!esSuperAdmin) {
     data.estado = "PENDIENTE";
+    // El monto de capital lo fija la cooperativa, no quien se asocia
+    const config = await prisma.configuracionCooperativa.findUnique({ where: { id: "singleton" } });
+    data.montoCapital = Number(config?.montoCapitalActual ?? 50000);
   }
 
   const existente = await prisma.usuario.findUnique({ where: { email: data.email } });
